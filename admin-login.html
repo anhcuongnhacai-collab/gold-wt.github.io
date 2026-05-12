@@ -75,6 +75,14 @@ button:hover{
 </div>
 
 <script>
+/* =========================
+   NẾU ĐÃ LOGIN
+========================= */
+if(localStorage.getItem("admin") === "true"){
+
+    window.location.href = "admin.html";
+
+}
 
 /* TÀI KHOẢN ADMIN CỐ ĐỊNH */
 const ADMIN_USER = "cuong17112k";
@@ -87,7 +95,7 @@ function login(){
 
     if(user === ADMIN_USER && pass === ADMIN_PASS){
 
-        localStorage.setItem("adminLogin", "true");
+        localStorage.setItem("admin", "true");
 
         window.location.href = "admin.html";
 

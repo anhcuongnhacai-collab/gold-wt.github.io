@@ -150,6 +150,9 @@ button{
 <div class="container">
 
     <h1>ADMIN - QUẢN LÝ GIAO DỊCH</h1>
+<button onclick="logout()">
+    Đăng xuất
+</button>
 
     <div class="summary">
         <div class="card">
@@ -196,6 +199,14 @@ button{
 </div>
 
 <script>
+    /* =========================
+   KIỂM TRA ADMIN LOGIN
+========================= */
+if(localStorage.getItem("admin") !== "true"){
+
+    window.location.href = "admin-login.html";
+
+}
 /* =========================
    LOAD LỊCH SỬ
 ========================= */
@@ -403,6 +414,13 @@ function reject(index){
 
     alert("❌ Đã từ chối giao dịch và hoàn tiền (nếu là rút tiền)");
     render();
+}
+function logout(){
+
+    localStorage.removeItem("admin");
+
+    window.location.href = "admin-login.html";
+
 }
 
 /* =========================
