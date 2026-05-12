@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng ký</title>
+
+  <!-- ICON -->
+  <link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="overlay">
+
+  <div class="register-box">
+
+    <h1>Đăng ký</h1>
+
+    <!-- USER -->
+    <div class="input-box">
+      <i class="fa-solid fa-user"></i>
+
+      <div class="field">
+  <input type="text"
+  id="registerUser"
+  placeholder="Nhập tên tài khoản">
+
+  <p class="error" id="userError">
+    Sai định dạng! "Chỉ nhập bằng tiếng anh!"
+  </p>
+</div>
+    </div>
+
+    <!-- PHONE -->
+    <div class="input-box">
+
+      <i class="fa-solid fa-phone"></i>
+
+      <div class="country">+84</div>
+
+      <input type="text"
+      id="phone"
+      placeholder="Số điện thoại">
+
+    </div>
+
+    <!-- PASSWORD -->
+    <div class="input-box">
+
+      <i class="fa-solid fa-lock"></i>
+
+      <div class="field">
+
+  <input type="password"
+  id="registerPass"
+  placeholder="Nhập mật khẩu">
+
+  <p class="error" id="passError">
+    Sai định dạng! "Chỉ nhập bằng tiếng anh!"
+  </p>
+
+</div>
+
+      <i class="fa-solid fa-eye eye"></i>
+
+    </div>
+
+    <!-- CONFIRM PASSWORD -->
+    <div class="input-box">
+
+      <i class="fa-solid fa-lock"></i>
+
+      <input type="password"
+      id="confirmPass"
+      placeholder="Nhập lại mật khẩu">
+
+      <i class="fa-solid fa-eye eye"></i>
+
+    </div>
+<!-- MÃ GIỚI THIỆU -->
+<div class="input-box">
+
+  <i class="fa-solid fa-gift"></i>
+
+  <input type="text"
+  id="refCodeInput"
+  placeholder="Nhập mã giới thiệu (nếu có)">
+
+</div>
+    <!-- CAPTCHA -->
+    <div class="captchaBox">
+
+      <span id="captcha"></span>
+
+      <i class="fa-solid fa-rotate-right"
+      onclick="createCaptcha()"></i>
+
+    </div>
+
+    <!-- CAPTCHA INPUT -->
+    <div class="input-box">
+
+      <i class="fa-solid fa-shield-halved"></i>
+
+      <input type="text"
+      id="captchaInput"
+      placeholder="Nhập mã xác nhận">
+
+    </div>
+
+    <button onclick="register()">
+      Đăng ký
+    </button>
+    <p class="login-link">
+  Bạn đã có tài khoản?
+  <a href="index.html">Đăng nhập</a>
+</p>
+
+  </div>
+
+</div>
+
+<script src="register.js"></script>
+
+</body>
+</html>

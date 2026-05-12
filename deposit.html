@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nạp tiền</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial;
+}
+
+body{
+    background:#fff3e6;
+    display:flex;
+    justify-content:center;
+}
+
+.container{
+    width:420px;
+    max-width:100%;
+    min-height:100vh;
+    background:#fff3e6;
+}
+
+/* HEADER */
+.header{
+    height:70px;
+    background:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:26px;
+    font-weight:bold;
+    position:relative;
+    box-shadow:0 2px 10px rgba(0,0,0,0.05);
+}
+
+.back{
+    position:absolute;
+    left:15px;
+    font-size:22px;
+    cursor:pointer;
+}
+
+/* CARD */
+.card{
+    background:white;
+    margin:20px;
+    border-radius:18px;
+    padding:20px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.05);
+}
+
+/* METHOD */
+.methods{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+}
+
+.method{
+    flex:1;
+    padding:15px;
+    border:2px solid #eee;
+    border-radius:14px;
+    text-align:center;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.method.active{
+    border-color:orange;
+    background:#fff4e6;
+}
+
+.method i{
+    font-size:24px;
+    margin-bottom:8px;
+    color:orange;
+}
+
+/* AMOUNT */
+.amounts{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:10px;
+}
+
+.amount{
+    padding:12px;
+    border:2px solid #eee;
+    border-radius:12px;
+    text-align:center;
+    cursor:pointer;
+    font-weight:bold;
+    transition:0.2s;
+}
+
+.amount.active{
+    border-color:orange;
+    background:#fff4e6;
+}
+
+/* BUTTON */
+.btn{
+    width:90%;
+    margin:20px auto;
+    display:block;
+    padding:15px;
+    border:none;
+    border-radius:15px;
+    background:orange;
+    color:white;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.btn:hover{
+    opacity:0.9;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <i class="fa-solid fa-arrow-left back"
+           onclick="window.location.href='cuatoi.html'"></i>
+        Nạp tiền
+    </div>
+
+    <!-- CARD -->
+    <div class="card">
+
+        <h3>Chọn phương thức</h3>
+
+        <div class="methods">
+            <div class="method active"
+                 id="qr"
+                 onclick="setMethod('QR')">
+                <i class="fa-solid fa-qrcode"></i>
+                <div>QR</div>
+            </div>
+
+            <div class="method"
+                 id="momo"
+                 onclick="setMethod('MOMO')">
+                <i class="fa-solid fa-wallet"></i>
+                <div>MoMo</div>
+            </div>
+        </div>
+
+        <h3>Chọn số tiền</h3>
+
+        <div class="amounts">
+            <div class="amount" onclick="setMoney(50000, event)">50K</div>
+            <div class="amount" onclick="setMoney(100000, event)">100K</div>
+            <div class="amount" onclick="setMoney(200000, event)">200K</div>
+            <div class="amount" onclick="setMoney(500000, event)">500K</div>
+            <div class="amount" onclick="setMoney(1000000, event)">1M</div>
+            <div class="amount" onclick="setMoney(5000000, event)">5M</div>
+        </div>
+
+    </div>
+
+    <!-- BUTTON -->
+    <button class="btn" onclick="submitDeposit()">
+        Xác nhận nạp tiền
+    </button>
+
+</div>
+
+<script>
+/* =========================
+   BIẾN TOÀN CỤC
+========================= */
+let method = "QR";
+let money = 0;
+
+/* =========================
+   CHỌN PHƯƠNG THỨC
+========================= */
+function setMethod(m){
+
+    method = m;
+
+    document.getElementById("qr").classList.remove("active");
+    document.getElementById("momo").classList.remove("active");
+
+    if(m === "QR"){
+        document.getElementById("qr").classList.add("active");
+    }else{
+        document.getElementById("momo").classList.add("active");
+    }
+}
+
+/* =========================
+   CHỌN SỐ TIỀN
+========================= */
+function setMoney(m, e){
+
+    money = m;
+
+    document.querySelectorAll(".amount").forEach(item => {
+        item.classList.remove("active");
+    });
+
+    e.target.classList.add("active");
+}
+
+/* =========================
+   XÁC NHẬN NẠP TIỀN
+========================= */
+function submitDeposit(){
+
+    if(money < 50000){
+        alert("Tối thiểu 50.000đ");
+        return;
+    }
+
+    /* Lấy tài khoản đang đăng nhập */
+    let currentUser = JSON.parse(
+        localStorage.getItem("currentUser")
+    );
+
+    if(!currentUser){
+        alert("Vui lòng đăng nhập lại!");
+        window.location.href = "index.html";
+        return;
+    }
+
+    /* Lấy lịch sử cũ */
+    let history = JSON.parse(
+        localStorage.getItem("history")
+    ) || [];
+
+    /* Tạo giao dịch nạp tiền */
+    history.push({
+        id: Date.now(),
+        phone: currentUser.phone,
+        username: currentUser.username || "",
+        type: "Nạp tiền",
+        amount: money,
+
+        // Phương thức nạp
+        method: method,
+
+        // Các trường để admin.html hiển thị thống nhất
+        bank: method,
+        bankOwner: "",
+        bankNumber: "",
+
+        // Thời gian
+        time: new Date().toLocaleString("vi-VN"),
+
+        // Trạng thái chờ duyệt
+        status: "pending"
+    });
+
+    /* Lưu lịch sử */
+    localStorage.setItem(
+        "history",
+        JSON.stringify(history)
+    );
+
+    /* Tạo link thanh toán */
+    let link = "";
+
+    if(method === "QR"){
+        link = "https://bank-qr-demo.com/pay?amount=" + money;
+    }else{
+        link = "https://me.momo.vn/nhantien1207?amount=" + money;
+    }
+
+    /* Popup thanh toán */
+    let box = document.createElement("div");
+
+    box.innerHTML = `
+    <div style="
+        position:fixed;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+        background:rgba(0,0,0,.5);
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        z-index:9999;
+    ">
+        <div style="
+            background:white;
+            padding:25px;
+            border-radius:15px;
+            text-align:center;
+            width:300px;
+        ">
+            <h3>Yêu cầu nạp tiền đã được gửi</h3>
+
+            <p style="margin-top:10px;">
+                Số tiền: ${money.toLocaleString("vi-VN")}đ
+            </p>
+
+            <p style="
+                margin-top:10px;
+                font-size:14px;
+                color:#666;
+            ">
+                Giao dịch đang chờ admin duyệt
+            </p>
+
+            <button
+                onclick="window.location.href='${link}'"
+                style="
+                    margin-top:15px;
+                    padding:10px 20px;
+                    background:orange;
+                    color:white;
+                    border:none;
+                    border-radius:10px;
+                    cursor:pointer;
+                ">
+                Thanh toán
+            </button>
+        </div>
+    </div>
+    `;
+
+    document.body.appendChild(box);
+}
+</script>
+
+</body>
+</html>
