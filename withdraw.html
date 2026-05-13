@@ -100,8 +100,7 @@ document.querySelector(".back").addEventListener("click",()=>window.location.hre
 
 // --- CẬP NHẬT SỐ DƯ ---
 function updateBalanceUI(){
-  const balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess;
-  const available = balance - totalWithdrawPending;
+  const balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
   moneyDisplay.innerText = "₫" + balance.toLocaleString("vi-VN");
 }
 
@@ -133,14 +132,13 @@ document.getElementById("withdrawBtn").addEventListener("click",()=>{
   const amount = Number(withdrawInput.value);
   const selectedBank = bankSelect.value;
 
-  const balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess;
-  const available = balance - totalWithdrawPending;
+  const available = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
 
   if(!selectedBank){ alert("Vui lòng chọn ngân hàng"); return; }
   if(amount < 50000){ alert("Rút tối thiểu 50.000đ"); return; }
   if(amount > available){ alert("Số dư không đủ"); return; }
 
-  // Thêm giao dịch rút tiền, status pending
+  // Tạo lệnh rút tiền trên Firebase
   push(ref(db,"withdraws"),{
     id: Date.now(),
     phone: currentUser.phone,
@@ -154,7 +152,7 @@ document.getElementById("withdrawBtn").addEventListener("click",()=>{
     status: "pending"
   });
 
-  // Tăng pending để trừ số dư ngay
+  // Cập nhật pending để trừ ngay số dư và số dư có thể rút
   totalWithdrawPending += amount;
   updateBalanceUI();
 
