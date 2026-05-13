@@ -76,9 +76,42 @@ import { ref, push } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-d
 // ------------------------------
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 let users = JSON.parse(localStorage.getItem("users")) || [];
-let user = users.find(u => u.phone == currentUser?.phone);
-let soDu = user ? (user.money || 0) : 0;
-document.getElementById("money").innerText = "₫" + soDu.toLocaleString("vi-VN");
+import { ref, onValue, push } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+// Biến lưu tổng nạp/rút
+let totalDeposit = 0;
+let totalWithdraw = 0;
+// Hàm trả về số dư hiện tại dựa trên số dư gốc + tổng nạp - tổng rút
+function getCurrentBalance() {
+    return (currentUser.money || 10000) + totalDeposit - totalWithdraw;
+}
+
+// Hàm cập nhật số dư hiển thị
+function updateBalance(){
+    let balance = (currentUser.money || 10000) + totalDeposit - totalWithdraw;
+    document.getElementById("money").innerText = "₫" + getCurrentBalance().toLocaleString("vi-VN");
+}
+
+// Lắng nghe tất cả giao dịch nạp tiền đã thành công
+onValue(ref(db,"deposits"), snapDep => {
+    totalDeposit = 0;
+    snapDep.forEach(d=>{
+        let v = d.val();
+        if(v.phone === currentUser.phone && v.status === "Thành công") totalDeposit += Number(v.amount);
+    });
+    updateBalance();
+});
+
+// Lắng nghe tất cả giao dịch rút tiền đã thành công
+onValue(ref(db,"withdraws"), snapW => {
+    totalWithdraw = 0;
+    snapW.forEach(w=>{
+        let v = w.val();
+        if(v.phone === currentUser.phone && v.status === "Thành công") totalWithdraw += Number(v.amount);
+    });
+    updateBalance();
+});
+
 
 // ------------------------------
 // LOAD NGÂN HÀNG
@@ -141,12 +174,12 @@ document.getElementById("withdrawBtn").addEventListener("click", () => {
         return;
     }
 
-    if(input > soDu){
-        alert("Số dư không đủ");
-        return;
-    }
+    if(input > getCurrentBalance()){
+    alert("Số dư không đủ");
+    return;
+}
 
-    // PUSH GIAO DỊCH LÊN FIREBASE
+    // PUSH giao dịch rút tiền lên Firebase
     push(ref(db, "withdraws"), {
         id: Date.now(),
         phone: currentUser.phone,
