@@ -199,58 +199,33 @@ button{
 </div>
 
 <script type="module">
-    import { db } from "./firebase-config.js";
+import { db, ref, onValue } from "./firebase-config.js";
 
-import {
-    ref,
-    onValue
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-    /* =========================
-   KIỂM TRA ADMIN LOGIN
-========================= */
-if(localStorage.getItem("admin") !== "true"){
-
-    window.location.href = "admin-login.html";
-
-}
-/* =========================
-   LOAD LỊCH SỬ
-========================= */
 let history = [];
 
-/* LOAD NẠP TIỀN */
-onValue(ref(db, "deposits"), (snapshot) => {
+/* =========================
+   KIỂM TRA ADMIN LOGIN
+========================= */
+if (localStorage.getItem("admin") !== "true") {
+    window.location.href = "admin-login.html";
+}
 
-    history = history.filter(
-        item => item.type !== "Nạp tiền"
-    );
+/* =========================
+   LẮNG NGHE NẠP TIỀN VÀ RÚT TIỀN TRÊN FIREBASE
+========================= */
+onValue(ref(db, "deposits"), snapshot => {
+    // Loại bỏ các item cũ cùng type
+    history = history.filter(i => i.type !== "Nạp tiền");
 
-    snapshot.forEach((child) => {
-
-        history.push(child.val());
-
-    });
-
+    snapshot.forEach(child => history.push(child.val()));
     render();
-
 });
 
-/* LOAD RÚT TIỀN */
-onValue(ref(db, "withdraws"), (snapshot) => {
+onValue(ref(db, "withdraws"), snapshot => {
+    history = history.filter(i => i.type !== "Rút tiền");
 
-    history = history.filter(
-        item => item.type !== "Rút tiền"
-    );
-
-    snapshot.forEach((child) => {
-
-        history.push(child.val());
-
-    });
-
+    snapshot.forEach(child => history.push(child.val()));
     render();
-
 });
 
 /* =========================
@@ -261,23 +236,14 @@ function formatMoney(value){
 }
 
 /* =========================
-   LƯU LỊCH SỬ
-========================= */
-function saveHistory(){
-}
-
-/* =========================
    CẬP NHẬT THỐNG KÊ
 ========================= */
 function updateSummary(){
     document.getElementById("totalCount").innerText = history.length;
-
     document.getElementById("pendingCount").innerText =
         history.filter(i => i.status === "pending").length;
-
     document.getElementById("successCount").innerText =
         history.filter(i => i.status === "Thành công").length;
-
     document.getElementById("rejectCount").innerText =
         history.filter(i => i.status === "Từ chối").length;
 }
@@ -304,43 +270,15 @@ function render(){
     history
         .sort((a, b) => (b.id || 0) - (a.id || 0))
         .forEach(item => {
-
             let statusText = item.status || "pending";
-            let statusClass = "pending";
+            let statusClass = statusText === "Thành công" ? "success" :
+                              statusText === "Từ chối" ? "reject" : "pending";
 
-            if(statusText === "Thành công"){
-                statusClass = "success";
-            }
-
-            if(statusText === "Từ chối"){
-                statusClass = "reject";
-            }
-
-            let originalIndex = history.findIndex(
-                h => h.id === item.id
-            );
-
-            let actionHtml = "";
-
-            if(statusText === "pending"){
-                actionHtml = `
-                    <button class="approve"
-                        onclick="approve(${originalIndex})">
-                        Duyệt
-                    </button>
-
-                    <button class="cancel"
-                        onclick="reject(${originalIndex})">
-                        Từ chối
-                    </button>
-                `;
-            }else{
-                actionHtml = `
-                    <button class="disabled" disabled>
-                        Đã xử lý
-                    </button>
-                `;
-            }
+            let originalIndex = history.findIndex(h => h.id === item.id);
+            let actionHtml = statusText === "pending" ? `
+                <button class="approve" onclick="approve(${originalIndex})">Duyệt</button>
+                <button class="cancel" onclick="reject(${originalIndex})">Từ chối</button>
+            ` : `<button class="disabled" disabled>Đã xử lý</button>`;
 
             list.innerHTML += `
                 <tr>
@@ -352,13 +290,7 @@ function render(){
                     <td>${item.bankOwner || "-"}</td>
                     <td>${item.bankNumber || "-"}</td>
                     <td>${item.time || "-"}</td>
-
-                    <td>
-                        <span class="status ${statusClass}">
-                            ${statusText}
-                        </span>
-                    </td>
-
+                    <td><span class="status ${statusClass}">${statusText}</span></td>
                     <td>${actionHtml}</td>
                 </tr>
             `;
@@ -368,99 +300,50 @@ function render(){
 }
 
 /* =========================
-   DUYỆT GIAO DỊCH
-   - NẠP TIỀN: cộng tiền
-   - RÚT TIỀN: chỉ đổi trạng thái
-     (vì đã trừ tiền ngay khi tạo lệnh)
+   DUYỆT & TỪ CHỐI GIAO DỊCH
 ========================= */
 function approve(index){
-
     let item = history[index];
+    if(!item || item.status !== "pending") return;
 
-    if(!item || item.status !== "pending"){
-        return;
-    }
-
-    // Nếu là nạp tiền thì cộng tiền
     if(item.type === "Nạp tiền"){
-
-        let users = JSON.parse(
-            localStorage.getItem("users")
-        ) || [];
-
-        let userIndex = users.findIndex(
-            u => u.phone == item.phone
-        );
-
+        let users = JSON.parse(localStorage.getItem("users")) || [];
+        let userIndex = users.findIndex(u => u.phone == item.phone);
         if(userIndex !== -1){
-            users[userIndex].money =
-                (users[userIndex].money || 0) +
-                Number(item.amount);
-
-            localStorage.setItem(
-                "users",
-                JSON.stringify(users)
-            );
+            users[userIndex].money = (users[userIndex].money || 0) + Number(item.amount);
+            localStorage.setItem("users", JSON.stringify(users));
         }
     }
 
-    // Chỉ đổi trạng thái
     item.status = "Thành công";
-    saveHistory();
-
-    alert("✔ Duyệt thành công");
     render();
+    alert("✔ Duyệt thành công");
+}
+
+function reject(index){
+    let item = history[index];
+    if(!item || item.status !== "pending") return;
+
+    if(item.type === "Rút tiền"){
+        let users = JSON.parse(localStorage.getItem("users")) || [];
+        let userIndex = users.findIndex(u => u.phone == item.phone);
+        if(userIndex !== -1){
+            users[userIndex].money = (users[userIndex].money || 0) + Number(item.amount);
+            localStorage.setItem("users", JSON.stringify(users));
+        }
+    }
+
+    item.status = "Từ chối";
+    render();
+    alert("❌ Đã từ chối giao dịch và hoàn tiền (nếu là rút tiền)");
 }
 
 /* =========================
-   TỪ CHỐI GIAO DỊCH
-   - RÚT TIỀN: hoàn tiền lại
-   - NẠP TIỀN: chỉ đổi trạng thái
+   LOGOUT
 ========================= */
-function reject(index){
-
-    let item = history[index];
-
-    if(!item || item.status !== "pending"){
-        return;
-    }
-
-    // Nếu là rút tiền thì hoàn tiền
-    if(item.type === "Rút tiền"){
-
-        let users = JSON.parse(
-            localStorage.getItem("users")
-        ) || [];
-
-        let userIndex = users.findIndex(
-            u => u.phone == item.phone
-        );
-
-        if(userIndex !== -1){
-            users[userIndex].money =
-                (users[userIndex].money || 0) +
-                Number(item.amount);
-
-            localStorage.setItem(
-                "users",
-                JSON.stringify(users)
-            );
-        }
-    }
-
-    // Đổi trạng thái
-    item.status = "Từ chối";
-    saveHistory();
-
-    alert("❌ Đã từ chối giao dịch và hoàn tiền (nếu là rút tiền)");
-    render();
-}
 function logout(){
-
     localStorage.removeItem("admin");
-
     window.location.href = "admin-login.html";
-
 }
 
 /* =========================

@@ -1,308 +1,129 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Rút tiền</title>
 
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:Arial;
-}
-
-body{
-  background:#f5f5f5;
-  display:flex;
-  justify-content:center;
-}
-
-.container{
-  width:100%;
-  max-width:420px;
-  min-height:100vh;
-  background:#f5f5f5;
-}
-
-.header{
-  width:100%;
-  height:70px;
-  background:white;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:28px;
-  font-weight:bold;
-  position:sticky;
-  top:0;
-  box-shadow:0 2px 10px rgba(0,0,0,0.05);
-  position:relative;
-}
-
-.back{
-  position:absolute;
-  left:20px;
-  font-size:24px;
-  cursor:pointer;
-}
-
-.card{
-  background:white;
-  margin:20px;
-  border-radius:20px;
-  padding:25px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.05);
-}
-
-.title{
-  font-size:18px;
-  color:#777;
-  margin-bottom:10px;
-}
-
-.money{
-  font-size:38px;
-  font-weight:bold;
-  color:#ff7a00;
-  margin-bottom:25px;
-}
-
-.input-box{
-  width:100%;
-  height:60px;
-  border:2px solid #eee;
-  border-radius:15px;
-  padding:0 15px;
-  margin-bottom:20px;
-  background:#fafafa;
-}
-
-.input-box input,
-.input-box select{
-  width:100%;
-  height:100%;
-  border:none;
-  outline:none;
-  background:none;
-  font-size:18px;
-}
-
-.info-box{
-  width:100%;
-  background:#fafafa;
-  border-radius:15px;
-  padding:15px;
-  margin-bottom:20px;
-  border:2px dashed #ffb067;
-}
-
-.info-line{
-  margin-bottom:10px;
-  font-size:15px;
-}
-
-.note{
-  font-size:14px;
-  color:#888;
-  line-height:1.6;
-}
-
-.btn{
-  width:calc(100% - 40px);
-  height:60px;
-  border:none;
-  border-radius:15px;
-  margin:0 20px;
-  background:linear-gradient(to right,#ff7a00,#ff9d00);
-  color:white;
-  font-size:22px;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-.btn:hover{
-  opacity:0.9;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+body{background:#f5f5f5;display:flex;justify-content:center;}
+.container{width:100%;max-width:420px;min-height:100vh;background:#f5f5f5;}
+.header{width:100%;height:70px;background:white;display:flex;justify-content:center;align-items:center;font-size:28px;font-weight:bold;position:sticky;top:0;box-shadow:0 2px 10px rgba(0,0,0,0.05);position:relative;}
+.back{position:absolute;left:20px;font-size:24px;cursor:pointer;}
+.card{background:white;margin:20px;border-radius:20px;padding:25px;box-shadow:0 5px 15px rgba(0,0,0,0.05);}
+.title{font-size:18px;color:#777;margin-bottom:10px;}
+.money{font-size:38px;font-weight:bold;color:#ff7a00;margin-bottom:25px;}
+.input-box{width:100%;height:60px;border:2px solid #eee;border-radius:15px;padding:0 15px;margin-bottom:20px;background:#fafafa;}
+.input-box input,.input-box select{width:100%;height:100%;border:none;outline:none;background:none;font-size:18px;}
+.info-box{width:100%;background:#fafafa;border-radius:15px;padding:15px;margin-bottom:20px;border:2px dashed #ffb067;}
+.info-line{margin-bottom:10px;font-size:15px;}
+.note{font-size:14px;color:#888;line-height:1.6;}
+.btn{width:calc(100% - 40px);height:60px;border:none;border-radius:15px;margin:0 20px;background:linear-gradient(to right,#ff7a00,#ff9d00);color:white;font-size:22px;font-weight:bold;cursor:pointer;}
+.btn:hover{opacity:0.9;}
 </style>
 </head>
 
 <body>
-
 <div class="container">
 
-  <!-- HEADER -->
   <div class="header">
-    <i class="fa-solid fa-arrow-left back"
-    onclick="goBack()"></i>
+    <i class="fa-solid fa-arrow-left back"></i>
     Rút tiền
   </div>
 
-  <!-- CARD -->
   <div class="card">
+    <div class="title">Số dư có thể rút</div>
+    <div class="money" id="money">₫0</div>
 
-    <div class="title">
-      Số dư có thể rút
-    </div>
-
-    <div class="money" id="money">
-      ₫0
-    </div>
-
-    <!-- CHỌN NGÂN HÀNG -->
     <div class="input-box">
-      <select id="bankSelect"
-      onchange="showBankInfo()">
-        <option value="">
-          -- Chọn ngân hàng --
-        </option>
+      <select id="bankSelect">
+        <option value="">-- Chọn ngân hàng --</option>
       </select>
     </div>
 
-    <!-- THÔNG TIN NGÂN HÀNG -->
-    <div class="info-box"
-    id="bankInfo"
-    style="display:none;">
-
-      <div class="info-line">
-        <b>Chủ tài khoản:</b>
-        <span id="owner"></span>
-      </div>
-
-      <div class="info-line">
-        <b>Số tài khoản:</b>
-        <span id="number"></span>
-      </div>
-
+    <div class="info-box" id="bankInfo" style="display:none;">
+      <div class="info-line"><b>Chủ tài khoản:</b> <span id="owner"></span></div>
+      <div class="info-line"><b>Số tài khoản:</b> <span id="number"></span></div>
     </div>
 
-    <!-- NHẬP TIỀN -->
     <div class="input-box">
-      <input
-      type="number"
-      id="withdrawInput"
-      placeholder="Nhập số tiền cần rút">
+      <input type="number" id="withdrawInput" placeholder="Nhập số tiền cần rút">
     </div>
 
     <div class="note">
       • Rút tối thiểu 50.000đ <br>
       • Xử lý trong 5 - 30 phút <br>
-      • Admin duyệt thành công mới trừ tiền
+    
     </div>
-
   </div>
 
-  <!-- BUTTON -->
-  <button class="btn"
-  onclick="withdrawMoney()">
-    Xác nhận rút tiền
-  </button>
-
+  <button class="btn" id="withdrawBtn">Xác nhận rút tiền</button>
 </div>
 
-<script>
+<script type="module">
+// ------------------------------
+// IMPORT FIREBASE
+// ------------------------------
+import { db } from "./firebase-config.js";
+import { ref, push } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
-/* =========================
-   LOAD SỐ DƯ TỪ users (ĐỒNG BỘ VỚI cuatoi.html)
-========================= */
-let currentUser = JSON.parse(
-    localStorage.getItem("currentUser")
-);
-
-let users = JSON.parse(
-    localStorage.getItem("users")
-) || [];
-
-let user = users.find(
-    u => u.phone == currentUser?.phone
-);
-
+// ------------------------------
+// LOAD SỐ DƯ
+// ------------------------------
+let currentUser = JSON.parse(localStorage.getItem("currentUser"));
+let users = JSON.parse(localStorage.getItem("users")) || [];
+let user = users.find(u => u.phone == currentUser?.phone);
 let soDu = user ? (user.money || 0) : 0;
+document.getElementById("money").innerText = "₫" + soDu.toLocaleString("vi-VN");
 
-document.getElementById("money").innerText =
-"₫" + soDu.toLocaleString("vi-VN");
-/* =========================
-   LOAD THÔNG TIN NGÂN HÀNG
-========================= */
-let bankData = JSON.parse(
-    localStorage.getItem("bankInfo")
-);
+// ------------------------------
+// LOAD NGÂN HÀNG
+// ------------------------------
+let bankData = JSON.parse(localStorage.getItem("bankInfo"));
+const bankSelect = document.getElementById("bankSelect");
+const bankInfoBox = document.getElementById("bankInfo");
+const ownerSpan = document.getElementById("owner");
+const numberSpan = document.getElementById("number");
 
 if(bankData){
-
-    let option =
-    document.createElement("option");
-
+    const option = document.createElement("option");
     option.value = bankData.bank;
     option.innerText = bankData.bank;
-
-    document.getElementById("bankSelect")
-    .appendChild(option);
+    bankSelect.appendChild(option);
 }
 
-/* =========================
-   HIỂN THỊ THÔNG TIN NGÂN HÀNG
-========================= */
+// ------------------------------
+// HIỂN THỊ THÔNG TIN NGÂN HÀNG
+// ------------------------------
 function showBankInfo(){
-
-    let selected =
-    document.getElementById("bankSelect").value;
-
-    if(
-        bankData &&
-        selected === bankData.bank
-    ){
-
-        document.getElementById("bankInfo")
-        .style.display = "block";
-
-        document.getElementById("owner")
-        .innerText = bankData.name;
-
-        document.getElementById("number")
-        .innerText = bankData.number;
-
-    }else{
-
-        document.getElementById("bankInfo")
-        .style.display = "none";
+    const selected = bankSelect.value;
+    if(bankData && selected === bankData.bank){
+        bankInfoBox.style.display = "block";
+        ownerSpan.innerText = bankData.name;
+        numberSpan.innerText = bankData.number;
+    } else {
+        bankInfoBox.style.display = "none";
     }
 }
+bankSelect.addEventListener("change", showBankInfo);
 
-/* =========================
-   QUAY LẠI
-========================= */
-function goBack(){
+// ------------------------------
+// QUAY LẠI
+// ------------------------------
+document.querySelector(".back").addEventListener("click", () => {
     window.location.href = "cuatoi.html";
-}
+});
 
-/* =========================
-   RÚT TIỀN
-   - KHÔNG TRỪ TIỀN NGAY
-   - CHỈ TẠO LỆNH pending
-   - ADMIN DUYỆT MỚI TRỪ TIỀN
-========================= */
-function withdrawMoney(){
-
-    /* Số tiền nhập */
-    let input = Number(
-        document.getElementById("withdrawInput").value
-    );
-
-    /* Ngân hàng đã chọn */
-    let selectedBank =
-    document.getElementById("bankSelect").value;
-
-    /* Tài khoản hiện tại */
-    let currentUser = JSON.parse(
-        localStorage.getItem("currentUser")
-    );
+// ------------------------------
+// RÚT TIỀN
+// ------------------------------
+document.getElementById("withdrawBtn").addEventListener("click", () => {
+    const input = Number(document.getElementById("withdrawInput").value);
+    const selectedBank = bankSelect.value;
 
     if(!currentUser){
         alert("Vui lòng đăng nhập lại!");
@@ -310,82 +131,38 @@ function withdrawMoney(){
         return;
     }
 
-    /* Chưa chọn ngân hàng */
     if(selectedBank === ""){
         alert("Vui lòng chọn ngân hàng");
         return;
     }
 
-    /* Tối thiểu 50.000 */
     if(input < 50000){
         alert("Rút tối thiểu 50.000đ");
         return;
     }
 
-    /* Không đủ tiền */
     if(input > soDu){
         alert("Số dư không đủ");
         return;
     }
 
-    /* Lấy lịch sử cũ */
-    let history = JSON.parse(
-        localStorage.getItem("history")
-    ) || [];
-
-    /* Tạo giao dịch mới */
-    history.push({
+    // PUSH GIAO DỊCH LÊN FIREBASE
+    push(ref(db, "withdraws"), {
         id: Date.now(),
         phone: currentUser.phone,
         username: currentUser.username || "",
         type: "Rút tiền",
         amount: input,
-
-        /* Thông tin ngân hàng */
         bank: bankData ? bankData.bank : "",
         bankOwner: bankData ? bankData.name : "",
         bankNumber: bankData ? bankData.number : "",
-
-        /* Thời gian */
         time: new Date().toLocaleString("vi-VN"),
-
-        /* Trạng thái */
         status: "pending"
     });
 
-    /* Lưu lịch sử */
-    localStorage.setItem(
-        "history",
-        JSON.stringify(history)
-    );
-    /* TRỪ TIỀN NGAY */
-user.money -= input;
-
-/* Cập nhật lại trong mảng users */
-let userIndex = users.findIndex(
-    u => u.phone == currentUser.phone
-);
-
-if(userIndex !== -1){
-    users[userIndex] = user;
-}
-
-/* Lưu lại users */
-localStorage.setItem(
-    "users",
-    JSON.stringify(users)
-);
-
-    /* Thông báo */
-    alert(
-        "Yêu cầu rút tiền đã được gửi.\nĐơn đang chờ admin xử lý."
-    );
-
-    /* Quay về trang của tôi */
+    alert("Yêu cầu rút tiền đã được gửi.\nĐơn đang chờ admin xử lý.");
     window.location.href = "cuatoi.html";
-}
-
+});
 </script>
-
 </body>
 </html>

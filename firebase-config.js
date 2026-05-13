@@ -1,24 +1,33 @@
-// Import Firebase
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+// firebase-config.js
+// --------------------------
+// Import các hàm cần thiết từ Firebase SDK
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { getDatabase, ref, push, onValue, set, get } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
-import {
-  getDatabase
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-// Firebase config
+// ===========================
+// Cấu hình Firebase (thay bằng config của bạn)
+// ===========================
 const firebaseConfig = {
-  apiKey: "AIzaSyCS42ywYL5MBfkPtit1OkoNs9tkBjRVarI",
-  authDomain: "gold-wt.firebaseapp.com",
-  projectId: "gold-wt",
-  storageBucket: "gold-wt.firebasestorage.app",
-  messagingSenderId: "89848178654",
-  appId: "1:89848178654:web:4e9ae1c49a42baff221f4f",
-  measurementId: "G-5L7PCHEX7H",
-  databaseURL: "https://gold-wt-default-rtdb.firebaseio.com"
+  apiKey: "AIzaSyARRhfDvEterUOjMnCdjMuV0pRRt4OFrYI",
+  authDomain: "goldwt1-f597e.firebaseapp.com",
+  databaseURL: "https://goldwt1-f597e-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "goldwt1-f597e",
+  storageBucket: "goldwt1-f597e.firebasestorage.app",
+  messagingSenderId: "301134547289",
+  appId: "1:301134547289:web:59c2bead386d343bb2e448"
 };
 
-// Init Firebase
+// ===========================
+// Khởi tạo Firebase app
+// ===========================
 const app = initializeApp(firebaseConfig);
 
-// Database
-export const db = getDatabase(app);
+// ===========================
+// Khởi tạo Database
+// ===========================
+const db = getDatabase(app);
+
+// ===========================
+// Export để các file khác import
+// ===========================
+export { db, ref, push, onValue, set, get };
