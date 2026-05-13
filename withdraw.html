@@ -6,6 +6,7 @@
 <title>Rút tiền</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
+/* CSS giống cũ, giữ nguyên */
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
 body{background:#f5f5f5;display:flex;justify-content:center;}
 .container{width:100%;max-width:420px;min-height:100vh;background:#f5f5f5;}
@@ -59,28 +60,13 @@ body{background:#f5f5f5;display:flex;justify-content:center;}
 </div>
 
 <script type="module">
-// ===============================
-// IMPORT FIREBASE
-// ===============================
 import { db } from "./firebase-config.js";
-import { ref, push } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+import { ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
-// ===============================
-// LẤY THÔNG TIN NGƯỜI DÙNG
-// ===============================
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href = "index.html";
-if(!currentUser.money) currentUser.money = 10000;
+if(!currentUser.baseMoney) currentUser.baseMoney = currentUser.money || 10000;
 
-// Cập nhật số dư hiển thị
-function updateBalanceUI(){
-    document.getElementById("money").innerText = "₫" + Number(currentUser.money).toLocaleString("vi-VN");
-}
-updateBalanceUI();
-
-// ===============================
-// LOAD NGÂN HÀNG
-// ===============================
 let bankData = JSON.parse(localStorage.getItem("bankInfo"));
 const bankSelect = document.getElementById("bankSelect");
 const bankInfoBox = document.getElementById("bankInfo");
@@ -94,68 +80,79 @@ if(bankData){
     bankSelect.appendChild(option);
 }
 
-function showBankInfo(){
-    const selected = bankSelect.value;
-    if(bankData && selected === bankData.bank){
-        bankInfoBox.style.display = "block";
-        ownerSpan.innerText = bankData.name;
-        numberSpan.innerText = bankData.number;
-    } else {
-        bankInfoBox.style.display = "none";
-    }
-}
-bankSelect.addEventListener("change", showBankInfo);
-
-// ===============================
-// QUAY LẠI
-// ===============================
-document.querySelector(".back").addEventListener("click", () => {
-    window.location.href = "cuatoi.html";
+bankSelect.addEventListener("change",()=>{
+    if(bankData && bankSelect.value===bankData.bank){
+        bankInfoBox.style.display="block";
+        ownerSpan.innerText=bankData.name;
+        numberSpan.innerText=bankData.number;
+    }else bankInfoBox.style.display="none";
 });
 
-// ===============================
-// RÚT TIỀN (TRỪ NGAY)
-// ===============================
-document.getElementById("withdrawBtn").addEventListener("click", () => {
-    const input = Number(document.getElementById("withdrawInput").value);
-    const selectedBank = bankSelect.value;
+document.querySelector(".back").addEventListener("click",()=>window.location.href="cuatoi.html");
 
-    if(selectedBank === ""){
-        alert("Vui lòng chọn ngân hàng");
-        return;
-    }
+function updateBalanceUI(balance){
+    document.getElementById("money").innerText = "₫"+Number(balance).toLocaleString("vi-VN");
+}
 
-    if(input < 50000){
-        alert("Rút tối thiểu 50.000đ");
-        return;
-    }
+// ================================
+// TÍNH SỐ DƯ DỰA TRÊN FIREBASE
+// ================================
+let totalDeposit = 0;
+let totalWithdrawPendingAndSuccess = 0;
 
-    if(input > currentUser.money){
-        alert("Số dư không đủ");
-        return;
-    }
+// Lắng nghe deposits
+onValue(ref(db,"deposits"), snap => {
+    totalDeposit=0;
+    snap.forEach(d=>{
+        let v=d.val();
+        if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit+=Number(v.amount);
+    });
+    updateDisplay();
+});
 
-    // Trừ tiền ngay
-    currentUser.money -= input;
-    localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    updateBalanceUI();
+// Lắng nghe withdraws
+onValue(ref(db,"withdraws"), snap=>{
+    totalWithdrawPendingAndSuccess=0;
+    snap.forEach(w=>{
+        let v=w.val();
+        if(v.phone===currentUser.phone && (v.status==="Thành công" || v.status==="pending")) totalWithdrawPendingAndSuccess+=Number(v.amount);
+    });
+    updateDisplay();
+});
 
-    // Push giao dịch rút tiền lên Firebase
-    push(ref(db, "withdraws"), {
-        id: Date.now(),
-        phone: currentUser.phone,
-        username: currentUser.username || "",
-        type: "Rút tiền",
-        amount: input,
-        bank: bankData ? bankData.bank : "",
-        bankOwner: bankData ? bankData.name : "",
-        bankNumber: bankData ? bankData.number : "",
-        time: new Date().toLocaleString("vi-VN"),
-        status: "pending" // admin sẽ duyệt
+function updateDisplay(){
+    let balance = currentUser.baseMoney + totalDeposit - totalWithdrawPendingAndSuccess;
+    updateBalanceUI(balance);
+    currentUser.money = balance;
+    localStorage.setItem("currentUser",JSON.stringify(currentUser));
+}
+
+// ================================
+// RÚT TIỀN
+// ================================
+document.getElementById("withdrawBtn").addEventListener("click",()=>{
+    const input=Number(document.getElementById("withdrawInput").value);
+    if(bankSelect.value===""){ alert("Vui lòng chọn ngân hàng"); return; }
+    if(input<50000){ alert("Rút tối thiểu 50.000đ"); return; }
+
+    if(input>currentUser.money){ alert("Số dư không đủ"); return; }
+
+    // Push đơn rút tiền lên Firebase với status "pending"
+    push(ref(db,"withdraws"),{
+        id:Date.now(),
+        phone:currentUser.phone,
+        username:currentUser.username||"",
+        type:"Rút tiền",
+        amount:input,
+        bank:bankData?bankData.bank:"",
+        bankOwner:bankData?bankData.name:"",
+        bankNumber:bankData?bankData.number:"",
+        time:new Date().toLocaleString("vi-VN"),
+        status:"pending"
     });
 
-    alert("Yêu cầu rút tiền đã được gửi.\nSố dư đã bị trừ.\nĐơn đang chờ admin xử lý.");
-    window.location.href = "cuatoi.html";
+    alert("Yêu cầu rút tiền đã gửi.\nSố dư đã được trừ tạm thời.\nĐơn đang chờ admin xử lý.");
+    window.location.href="cuatoi.html";
 });
 </script>
 </body>
