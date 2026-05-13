@@ -6,28 +6,121 @@
 <title>Admin - Quản lý giao dịch</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
-body{background:#f5f5f5;padding:20px;}
-.container{max-width:1400px;margin:auto;}
-h1{text-align:center;margin-bottom:20px;font-size:32px;font-weight:bold;}
-.summary{display:flex;gap:15px;margin-bottom:20px;flex-wrap:wrap;}
-.card{flex:1;min-width:200px;background:white;padding:20px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.05);text-align:center;}
-.card h3{font-size:14px;color:#666;margin-bottom:8px;}
-.card .value{font-size:28px;font-weight:bold;}
-.table-wrapper{overflow-x:auto;background:white;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.05);}
-.table{width:100%;border-collapse:collapse;min-width:1200px;}
-.table th{background:#111827;color:white;padding:14px;font-size:14px;}
-.table td{padding:12px;border-bottom:1px solid #eee;text-align:center;font-size:14px;}
-.table tr:hover{background:#f9fafb;}
-.status{padding:6px 12px;border-radius:999px;font-size:12px;font-weight:bold;display:inline-block;}
-.pending{background:#f59e0b;color:white;}
-.success{background:#10b981;color:white;}
-.reject{background:#ef4444;color:white;}
-button{border:none;border-radius:8px;padding:8px 12px;margin:2px;cursor:pointer;font-weight:bold;}
-.approve{background:#10b981;color:white;}
-.cancel{background:#ef4444;color:white;}
-.disabled{background:#d1d5db;color:#6b7280;cursor:not-allowed;}
-.empty{text-align:center;padding:30px;color:#888;}
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+body{
+    background:#f5f5f5;
+    padding:20px;
+}
+.container{
+    max-width:1400px;
+    margin:auto;
+}
+h1{
+    text-align:center;
+    margin-bottom:20px;
+    font-size:32px;
+    font-weight:bold;
+}
+.summary{
+    display:flex;
+    gap:15px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+}
+.card{
+    flex:1;
+    min-width:200px;
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.05);
+    text-align:center;
+}
+.card h3{
+    font-size:14px;
+    color:#666;
+    margin-bottom:8px;
+}
+.card .value{
+    font-size:28px;
+    font-weight:bold;
+}
+.table-wrapper{
+    overflow-x:auto;
+    background:white;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.05);
+}
+.table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:1200px;
+}
+.table th{
+    background:#111827;
+    color:white;
+    padding:14px;
+    font-size:14px;
+}
+.table td{
+    padding:12px;
+    border-bottom:1px solid #eee;
+    text-align:center;
+    font-size:14px;
+}
+.table tr:hover{
+    background:#f9fafb;
+}
+.status{
+    padding:6px 12px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:bold;
+    display:inline-block;
+}
+.pending{
+    background:#f59e0b;
+    color:white;
+}
+.success{
+    background:#10b981;
+    color:white;
+}
+.reject{
+    background:#ef4444;
+    color:white;
+}
+button{
+    border:none;
+    border-radius:8px;
+    padding:8px 12px;
+    margin:2px;
+    cursor:pointer;
+    font-weight:bold;
+}
+.approve{
+    background:#10b981;
+    color:white;
+}
+.cancel{
+    background:#ef4444;
+    color:white;
+}
+.disabled{
+    background:#d1d5db;
+    color:#6b7280;
+    cursor:not-allowed;
+}
+.empty{
+    text-align:center;
+    padding:30px;
+    color:#888;
+}
 </style>
 </head>
 
@@ -84,16 +177,16 @@ import { db, ref, onValue, set } from "./firebase-config.js";
 
 let history = [];
 
-/* =========================
-   KIỂM TRA ADMIN LOGIN
-========================= */
+// =========================
+// KIỂM TRA ADMIN LOGIN
+// =========================
 if (localStorage.getItem("admin") !== "true") {
     window.location.href = "admin-login.html";
 }
 
-/* =========================
-   LẮNG NGHE FIREBASE
-========================= */
+// =========================
+// LẮNG NGHE NẠP TIỀN & RÚT TIỀN
+// =========================
 onValue(ref(db, "deposits"), snapshot => {
     history = history.filter(i => i.type !== "Nạp tiền");
     snapshot.forEach(child => {
@@ -114,42 +207,45 @@ onValue(ref(db, "withdraws"), snapshot => {
     render();
 });
 
-/* =========================
-   FORMAT TIỀN
-========================= */
+// =========================
+// FORMAT TIỀN
+// =========================
 function formatMoney(value){
-    return Number(value || 0).toLocaleString("vi-VN") + "₫";
+    return Number(value||0).toLocaleString("vi-VN")+"₫";
 }
 
-/* =========================
-   CẬP NHẬT THỐNG KÊ
-========================= */
+// =========================
+// CẬP NHẬT THỐNG KÊ
+// =========================
 function updateSummary(){
     document.getElementById("totalCount").innerText = history.length;
-    document.getElementById("pendingCount").innerText = history.filter(i => i.status==="pending").length;
-    document.getElementById("successCount").innerText = history.filter(i => i.status==="Thành công").length;
-    document.getElementById("rejectCount").innerText = history.filter(i => i.status==="Từ chối").length;
+    document.getElementById("pendingCount").innerText = history.filter(i=>i.status==="pending").length;
+    document.getElementById("successCount").innerText = history.filter(i=>i.status==="Thành công").length;
+    document.getElementById("rejectCount").innerText = history.filter(i=>i.status==="Từ chối").length;
 }
 
-/* =========================
-   HIỂN THỊ DANH SÁCH
-========================= */
+// =========================
+// HIỂN THỊ DANH SÁCH
+// =========================
 function render(){
     const list = document.getElementById("list");
     list.innerHTML = "";
+
     if(history.length===0){
         list.innerHTML = `<tr><td colspan="10" class="empty">Chưa có giao dịch nào</td></tr>`;
         updateSummary();
         return;
     }
-    history.sort((a,b)=> (b.id||0)-(a.id||0)).forEach(item=>{
+
+    history.sort((a,b)=> (b.id||0)-(a.id||0)).forEach((item,index)=>{
         let statusText = item.status || "pending";
-        let statusClass = statusText==="Thành công" ? "success" : statusText==="Từ chối" ? "reject" : "pending";
-        let originalIndex = history.findIndex(h=>h.id===item.id);
-        let actionHtml = statusText==="pending" ? `
-            <button class="approve" onclick="approve(${originalIndex})">Duyệt</button>
-            <button class="cancel" onclick="reject(${originalIndex})">Từ chối</button>
-        ` : `<button class="disabled" disabled>Đã xử lý</button>`;
+        let statusClass = statusText==="Thành công"?"success":statusText==="Từ chối"?"reject":"pending";
+
+        let actionHtml = statusText==="pending"?`
+            <button class="approve" onclick="approve(${index})">Duyệt</button>
+            <button class="cancel" onclick="reject(${index})">Từ chối</button>
+        `:`<button class="disabled" disabled>Đã xử lý</button>`;
+
         list.innerHTML += `
             <tr>
                 <td>${item.phone||"-"}</td>
@@ -165,29 +261,32 @@ function render(){
             </tr>
         `;
     });
+
     updateSummary();
 }
 
-/* =========================
-   DUYỆT & TỪ CHỐI GIAO DỊCH
-========================= */
+// =========================
+// DUYỆT & TỪ CHỐI GIAO DỊCH
+// =========================
 function approve(index){
     let item = history[index];
     if(!item || item.status!=="pending") return;
 
     if(item.type==="Nạp tiền"){
-        let users = JSON.parse(localStorage.getItem("users")) || [];
+        let users = JSON.parse(localStorage.getItem("users"))||[];
         let userIndex = users.findIndex(u=>u.phone==item.phone);
         if(userIndex!==-1){
-            users[userIndex].money = (users[userIndex].money||0)+Number(item.amount);
+            users[userIndex].money=(users[userIndex].money||0)+Number(item.amount);
             localStorage.setItem("users",JSON.stringify(users));
         }
-        set(ref(db, `deposits/${item.key}`), {...item, status:"Thành công"});
-    } else {
-        set(ref(db, `withdraws/${item.key}`), {...item, status:"Thành công"});
     }
 
     item.status="Thành công";
+    // Cập nhật Firebase
+    if(item.key){
+        set(ref(db, `deposits/${item.key}`), item);
+    }
+
     render();
     alert("✔ Duyệt thành công");
 }
@@ -197,34 +296,44 @@ function reject(index){
     if(!item || item.status!=="pending") return;
 
     if(item.type==="Rút tiền"){
-        let users = JSON.parse(localStorage.getItem("users")) || [];
+        let users = JSON.parse(localStorage.getItem("users"))||[];
         let userIndex = users.findIndex(u=>u.phone==item.phone);
         if(userIndex!==-1){
-            users[userIndex].money = (users[userIndex].money||0)+Number(item.amount);
+            users[userIndex].money=(users[userIndex].money||0)+Number(item.amount);
             localStorage.setItem("users",JSON.stringify(users));
         }
-        set(ref(db, `withdraws/${item.key}`), {...item, status:"Từ chối"});
-    } else {
-        set(ref(db, `deposits/${item.key}`), {...item, status:"Từ chối"});
     }
 
     item.status="Từ chối";
+    // Cập nhật Firebase
+    if(item.key){
+        set(ref(db, item.type==="Nạp tiền"?`deposits/${item.key}`:`withdraws/${item.key}`), item);
+    }
+
     render();
     alert("❌ Đã từ chối giao dịch và hoàn tiền (nếu là rút tiền)");
 }
 
-/* =========================
-   LOGOUT
-========================= */
+// =========================
+// LOGOUT
+// =========================
 function logout(){
     localStorage.removeItem("admin");
     window.location.href="admin-login.html";
 }
 
-/* =========================
-   KHỞI CHẠY
-========================= */
+// =========================
+// Gán ra window để HTML gọi được
+// =========================
+window.approve = approve;
+window.reject = reject;
+window.logout = logout;
+
+// =========================
+// KHỞI CHẠY
+// =========================
 render();
+
 </script>
 
 </body>
