@@ -39,8 +39,9 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 <body>
 <div class="container">
 <div class="title">Của tôi</div>
+<!-- Tai nghe -->
 <div class="top-icon" onclick="goSupport()"><i class="fa-solid fa-headphones"></i></div>
-
+<!-- PROFILE -->
 <div class="profile">
 <div class="avatar">
 <img src="images/logo.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
@@ -57,9 +58,8 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 </div>
 </div>
 </div>
-
+<!-- MENU -->
 <div class="menu">
-<!-- Giữ nguyên menu như trước -->
 <div class="menu-item" onclick="goWithdraw()"><div class="left"><div class="icon"><i class="fa-solid fa-arrow-up"></i></div><div class="text">Rút tiền</div></div><div class="arrow"><i class="fa-solid fa-angle-right"></i></div></div>
 <div class="menu-item" onclick="goDeposit()"><div class="left"><div class="icon"><i class="fa-solid fa-wallet"></i></div><div class="text">Nạp tiền</div></div><div class="arrow"><i class="fa-solid fa-angle-right"></i></div></div>
 <div class="menu-item" onclick="goBank()"><div class="left"><div class="icon"><i class="fa-solid fa-credit-card"></i></div><div class="text">Ngân hàng</div></div><div class="arrow"><i class="fa-solid fa-angle-right"></i></div></div>
@@ -68,9 +68,9 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 <div class="menu-item" onclick="goHistory()"><div class="left"><div class="icon"><i class="fa-solid fa-clock-rotate-left"></i></div><div class="text">Lịch sử giao dịch</div></div><div class="arrow"><i class="fa-solid fa-angle-right"></i></div></div>
 <div class="menu-item" id="logoutBtn"><div class="left"><div class="icon"><i class="fa-solid fa-power-off"></i></div><div class="text">Đăng xuất</div></div><div class="arrow"><i class="fa-solid fa-angle-right"></i></div></div>
 </div>
-
+</div>
+<!-- NAV BAR -->
 <div class="bottom-nav">
-<!-- Nav giữ nguyên -->
 <div class="nav-item" onclick="goHome()"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Trang chủ</span></div>
 <div class="nav-item" onclick="goProfilePage()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span>Hồ sơ</span></div>
 <div class="nav-item" onclick="goIntro()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg><span>Giới thiệu</span></div>
@@ -82,10 +82,10 @@ import { db, ref, onValue } from "./firebase-config.js";
 
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href = "index.html";
-if(!currentUser.money) currentUser.money = 10000;
+if(!currentUser.baseMoney) currentUser.baseMoney = currentUser.money || 10000;
+document.getElementById("userPhone").innerText = "+84 " + currentUser.phone;
 
-document.getElementById("userPhone").innerText = "+84 "+currentUser.phone;
-
+// hàm chuyển trang
 function goHome(){ window.location.href="home.html"; }
 function goProfilePage(){ window.location.href="hoso.html"; }
 function goIntro(){ window.location.href="intro.html"; }
@@ -96,41 +96,49 @@ function goSupport(){ window.location.href="support.html"; }
 function goGroup(){ window.open("https://t.me/GOLDWT1","_blank"); }
 function goHistory(){ window.location.href="history.html"; }
 function logout(){ localStorage.removeItem("currentUser"); window.location.href="index.html"; }
-
-window.goHome = goHome;
-window.goProfilePage = goProfilePage;
-window.goIntro = goIntro;
-window.goWithdraw = goWithdraw;
-window.goDeposit = goDeposit;
-window.goBank = goBank;
-window.goSupport = goSupport;
-window.goGroup = goGroup;
-window.goHistory = goHistory;
-window.logout = logout;
+window.goHome = goHome; window.goProfilePage = goProfilePage;
+window.goIntro = goIntro; window.goWithdraw = goWithdraw;
+window.goDeposit = goDeposit; window.goBank = goBank; window.goSupport = goSupport;
+window.goGroup = goGroup; window.goHistory = goHistory; window.logout = logout;
 document.getElementById("logoutBtn").onclick = logout;
 
-// Hàm cập nhật số dư
+// Hàm cập nhật số dư UI
 function updateBalanceUI(amount){
     document.getElementById("balance").innerText = "₫"+Number(amount).toLocaleString("vi-VN");
     document.getElementById("withdraw").innerText = "₫"+Number(amount).toLocaleString("vi-VN");
 }
 
-// Đồng bộ với withdraw: chỉ cộng tiền nạp, rút đã trừ rồi
+// Đồng bộ với withdraw và admin
 let totalDeposit = 0;
-onValue(ref(db,"deposits"), snapDep => {
+let totalWithdraw = 0;
+
+// Lắng nghe nạp tiền thành công
+onValue(ref(db,"deposits"), snap => {
     totalDeposit = 0;
-    snapDep.forEach(d => {
+    snap.forEach(d => {
         let v = d.val();
         if(v.phone === currentUser.phone && v.status === "Thành công") totalDeposit += Number(v.amount);
     });
     updateBalance();
 });
 
+// Lắng nghe rút tiền (bao gồm pending) để số dư trừ luôn khi user rút
+onValue(ref(db,"withdraws"), snap => {
+    totalWithdraw = 0;
+    snap.forEach(w => {
+        let v = w.val();
+        if(v.phone === currentUser.phone && (v.status==="Thành công" || v.status==="pending")) totalWithdraw += Number(v.amount);
+    });
+    updateBalance();
+});
+
 function updateBalance(){
-    let balance = currentUser.money + totalDeposit; // currentUser.money đã trừ khi tạo đơn rút
-    updateBalanceUI(balance);
+    let balance = (currentUser.baseMoney || 10000) + totalDeposit - totalWithdraw;
+    currentUser.money = balance;
     localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    updateBalanceUI(balance);
 }
+
 </script>
 </body>
 </html>
