@@ -199,7 +199,7 @@ let money = 0;
 /* =========================
    CHỌN PHƯƠNG THỨC
 ========================= */
-function setMethod(m){
+window.setMethod = function(m){
 
     method = m;
 
@@ -216,7 +216,7 @@ function setMethod(m){
 /* =========================
    CHỌN SỐ TIỀN
 ========================= */
-function setMoney(m, e){
+window.setMoney = function(m, e){
 
     money = m;
 
@@ -230,7 +230,7 @@ function setMoney(m, e){
 /* =========================
    XÁC NHẬN NẠP TIỀN
 ========================= */
-function submitDeposit(){
+window.submitDeposit = function(){
 
     if(money < 50000){
         alert("Tối thiểu 50.000đ");
