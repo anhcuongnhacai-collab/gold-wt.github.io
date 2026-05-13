@@ -16,6 +16,7 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 .profile{ text-align:center; margin-top:20px; }
 .avatar{ width:85px; height:85px; border-radius:50%; background:#6bc1ff; margin:auto; display:flex; justify-content:center; align-items:center; }
 .avatar i{ font-size:45px; color:white; }
+.user-id{ margin-top:10px; color:#777; font-size:14px; }
 /* BALANCE */
 .balance-box{ display:flex; gap:10px; margin-top:20px; }
 .balance-item{ flex:1; background:#eee; padding:14px; border-radius:12px; }
@@ -37,13 +38,9 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 </head>
 <body>
 <div class="container">
-
 <div class="title">Của tôi</div>
-
-<!-- Tai nghe -->
 <div class="top-icon" onclick="goSupport()"><i class="fa-solid fa-headphones"></i></div>
 
-<!-- PROFILE -->
 <div class="profile">
 <div class="avatar">
 <img src="images/logo.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
@@ -61,8 +58,8 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 </div>
 </div>
 
-<!-- MENU -->
 <div class="menu">
+<!-- Giữ nguyên menu như trước -->
 <div class="menu-item" onclick="goWithdraw()"><div class="left"><div class="icon"><i class="fa-solid fa-arrow-up"></i></div><div class="text">Rút tiền</div></div><div class="arrow"><i class="fa-solid fa-angle-right"></i></div></div>
 <div class="menu-item" onclick="goDeposit()"><div class="left"><div class="icon"><i class="fa-solid fa-wallet"></i></div><div class="text">Nạp tiền</div></div><div class="arrow"><i class="fa-solid fa-angle-right"></i></div></div>
 <div class="menu-item" onclick="goBank()"><div class="left"><div class="icon"><i class="fa-solid fa-credit-card"></i></div><div class="text">Ngân hàng</div></div><div class="arrow"><i class="fa-solid fa-angle-right"></i></div></div>
@@ -71,10 +68,9 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 <div class="menu-item" onclick="goHistory()"><div class="left"><div class="icon"><i class="fa-solid fa-clock-rotate-left"></i></div><div class="text">Lịch sử giao dịch</div></div><div class="arrow"><i class="fa-solid fa-angle-right"></i></div></div>
 <div class="menu-item" id="logoutBtn"><div class="left"><div class="icon"><i class="fa-solid fa-power-off"></i></div><div class="text">Đăng xuất</div></div><div class="arrow"><i class="fa-solid fa-angle-right"></i></div></div>
 </div>
-</div>
 
-<!-- NAV BAR -->
 <div class="bottom-nav">
+<!-- Nav giữ nguyên -->
 <div class="nav-item" onclick="goHome()"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Trang chủ</span></div>
 <div class="nav-item" onclick="goProfilePage()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span>Hồ sơ</span></div>
 <div class="nav-item" onclick="goIntro()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg><span>Giới thiệu</span></div>
@@ -86,8 +82,6 @@ import { db, ref, onValue } from "./firebase-config.js";
 
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href = "index.html";
-
-// default 10k nếu user mới
 if(!currentUser.money) currentUser.money = 10000;
 
 document.getElementById("userPhone").innerText = "+84 "+currentUser.phone;
@@ -101,10 +95,7 @@ function goBank(){ window.location.href="bank.html"; }
 function goSupport(){ window.location.href="support.html"; }
 function goGroup(){ window.open("https://t.me/GOLDWT1","_blank"); }
 function goHistory(){ window.location.href="history.html"; }
-function logout(){
-    localStorage.removeItem("currentUser");
-    window.location.href="index.html";
-}
+function logout(){ localStorage.removeItem("currentUser"); window.location.href="index.html"; }
 
 window.goHome = goHome;
 window.goProfilePage = goProfilePage;
@@ -118,44 +109,25 @@ window.goHistory = goHistory;
 window.logout = logout;
 document.getElementById("logoutBtn").onclick = logout;
 
-// ============================
-// HIỂN THỊ SỐ DƯ
-// ============================
+// Hàm cập nhật số dư
 function updateBalanceUI(amount){
     document.getElementById("balance").innerText = "₫"+Number(amount).toLocaleString("vi-VN");
     document.getElementById("withdraw").innerText = "₫"+Number(amount).toLocaleString("vi-VN");
 }
 
-// ============================
-// LẮNG NGHE GIAO DỊCH
-// ============================
+// Đồng bộ với withdraw: chỉ cộng tiền nạp, rút đã trừ rồi
 let totalDeposit = 0;
-let totalWithdraw = 0;
-
 onValue(ref(db,"deposits"), snapDep => {
     totalDeposit = 0;
-    snapDep.forEach(d=>{
+    snapDep.forEach(d => {
         let v = d.val();
-        if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit += Number(v.amount);
-    });
-    updateBalance();
-});
-
-onValue(ref(db,"withdraws"), snapW => {
-    totalWithdraw = 0;
-    snapW.forEach(w=>{
-        let v = w.val();
-        if(v.phone===currentUser.phone){
-            // Nếu rút đã trừ tiền ngay khi submit → chỉ tính các rút đã duyệt thành công
-            if(v.status==="Thành công") totalWithdraw += Number(v.amount);
-        }
+        if(v.phone === currentUser.phone && v.status === "Thành công") totalDeposit += Number(v.amount);
     });
     updateBalance();
 });
 
 function updateBalance(){
-    // Sử dụng currentUser.money đã trừ khi rút tiền
-    let balance = currentUser.money + totalDeposit; 
+    let balance = currentUser.money + totalDeposit; // currentUser.money đã trừ khi tạo đơn rút
     updateBalanceUI(balance);
     localStorage.setItem("currentUser", JSON.stringify(currentUser));
 }
