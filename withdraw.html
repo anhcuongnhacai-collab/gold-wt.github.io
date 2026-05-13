@@ -64,53 +64,43 @@ body{background:#f5f5f5;display:flex;justify-content:center;}
 import { db } from "./firebase-config.js";
 import { ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
-// ----------------------------
-// USER & SỐ DƯ
-// ----------------------------
+// Lấy user hiện tại
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href="index.html";
-
-// Base tiền gốc
 if(!currentUser.baseMoney) currentUser.baseMoney = 10000;
 
 const moneyEl = document.getElementById("money");
 
-// ----------------------------
-// NGÂN HÀNG
-// ----------------------------
+// Ngân hàng
 let bankData = JSON.parse(localStorage.getItem("bankInfo"));
 const bankSelect = document.getElementById("bankSelect");
 const bankInfoBox = document.getElementById("bankInfo");
 const ownerSpan = document.getElementById("owner");
 const numberSpan = document.getElementById("number");
-
 if(bankData){
     const option = document.createElement("option");
     option.value = bankData.bank;
     option.innerText = bankData.bank;
     bankSelect.appendChild(option);
 }
-
-// Hiển thị thông tin ngân hàng khi chọn
 function showBankInfo(){
     const selected = bankSelect.value;
     if(bankData && selected === bankData.bank){
         bankInfoBox.style.display = "block";
         ownerSpan.innerText = bankData.name;
         numberSpan.innerText = bankData.number;
-    } else {
-        bankInfoBox.style.display = "none";
-    }
+    } else bankInfoBox.style.display="none";
 }
 bankSelect.addEventListener("change", showBankInfo);
 
 // ----------------------------
-// SỐ DƯ ĐỒNG BỘ
+// SỐ DƯ & PENDING
 // ----------------------------
 let totalDeposit = 0;
 let totalWithdrawSuccess = 0;
 let totalWithdrawPending = 0;
 
+// tính số dư hiển thị
 function recalcBalance(){
     const balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
     moneyEl.innerText = "₫" + balance.toLocaleString("vi-VN");
@@ -142,26 +132,26 @@ onValue(ref(db, "withdraws"), snap => {
 });
 
 // ----------------------------
-// NÚT RÚT TIỀN
+// NÚT RÚT TIỀN - TRỪ NGAY
 // ----------------------------
 const withdrawBtn = document.getElementById("withdrawBtn");
 const withdrawInput = document.getElementById("withdrawInput");
 
 withdrawBtn.addEventListener("click", ()=>{
     const amount = Number(withdrawInput.value);
-    const available = recalcBalance();
+    const balanceAvailable = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
 
     if(!bankSelect.value){ alert("Vui lòng chọn ngân hàng"); return; }
     if(amount < 50000){ alert("Rút tối thiểu 50.000đ"); return; }
-    if(amount > available){ alert("Số dư không đủ"); return; }
+    if(amount > balanceAvailable){ alert("Số dư không đủ"); return; }
 
-    // Trừ tiền ngay: cập nhật currentUser và pending
+    // Trừ ngay cả balance và available
     totalWithdrawPending += amount;
     currentUser.money = (currentUser.money || currentUser.baseMoney) - amount;
     localStorage.setItem("currentUser", JSON.stringify(currentUser));
     recalcBalance();
 
-    // Push giao dịch rút tiền pending lên Firebase
+    // Push lên Firebase
     push(ref(db,"withdraws"), {
         id: Date.now(),
         phone: currentUser.phone,
@@ -178,9 +168,7 @@ withdrawBtn.addEventListener("click", ()=>{
     window.location.href="cuatoi.html";
 });
 
-// ----------------------------
-// QUAY LẠI
-// ----------------------------
+// Quay lại
 document.querySelector(".back").addEventListener("click", ()=>{
     window.location.href="cuatoi.html";
 });
