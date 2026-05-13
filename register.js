@@ -97,6 +97,7 @@ totalCommission: 0
 
   users.push(newUser);
   localStorage.setItem("users", JSON.stringify(users));
+localStorage.setItem("currentUser", JSON.stringify(newUser));
 
   alert("Đăng ký thành công!");
   window.location.href = "index.html";
