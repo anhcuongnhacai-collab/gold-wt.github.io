@@ -198,7 +198,14 @@ button{
 
 </div>
 
-<script>
+<script type="module">
+    import { db } from "./firebase-config.js";
+
+import {
+    ref,
+    onValue
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
     /* =========================
    KIỂM TRA ADMIN LOGIN
 ========================= */
@@ -210,7 +217,41 @@ if(localStorage.getItem("admin") !== "true"){
 /* =========================
    LOAD LỊCH SỬ
 ========================= */
-let history = JSON.parse(localStorage.getItem("history")) || [];
+let history = [];
+
+/* LOAD NẠP TIỀN */
+onValue(ref(db, "deposits"), (snapshot) => {
+
+    history = history.filter(
+        item => item.type !== "Nạp tiền"
+    );
+
+    snapshot.forEach((child) => {
+
+        history.push(child.val());
+
+    });
+
+    render();
+
+});
+
+/* LOAD RÚT TIỀN */
+onValue(ref(db, "withdraws"), (snapshot) => {
+
+    history = history.filter(
+        item => item.type !== "Rút tiền"
+    );
+
+    snapshot.forEach((child) => {
+
+        history.push(child.val());
+
+    });
+
+    render();
+
+});
 
 /* =========================
    FORMAT TIỀN
@@ -223,7 +264,6 @@ function formatMoney(value){
    LƯU LỊCH SỬ
 ========================= */
 function saveHistory(){
-    localStorage.setItem("history", JSON.stringify(history));
 }
 
 /* =========================
