@@ -131,19 +131,18 @@ let totalDeposit = 0;
 let totalWithdraw = 0;
 
 // Lắng nghe nạp tiền
-onValue(ref(db,"deposits"), snapDep=>{
+onValue(ref(db,"deposits"), snapDep => {
     totalDeposit = 0;
-    snapDep.forEach(d=>{
+    snapDep.forEach(d => {
         let v = d.val();
         if(v.phone === currentUser.phone && v.status === "Thành công") totalDeposit += Number(v.amount);
     });
     updateBalance();
 });
 
-// Lắng nghe rút tiền
-onValue(ref(db,"withdraws"), snapW=>{
+onValue(ref(db,"withdraws"), snapW => {
     totalWithdraw = 0;
-    snapW.forEach(w=>{
+    snapW.forEach(w => {
         let v = w.val();
         if(v.phone === currentUser.phone && v.status === "Thành công") totalWithdraw += Number(v.amount);
     });
@@ -152,8 +151,11 @@ onValue(ref(db,"withdraws"), snapW=>{
 
 // Cập nhật số dư
 function updateBalance(){
-    let balance = (currentUser.money||0) + totalDeposit - totalWithdraw;
+    // dùng baseMoney làm gốc, không lấy currentUser.money
+    let balance = (currentUser.baseMoney || 10000) + totalDeposit - totalWithdraw;
     updateBalanceUI(balance);
+
+    // lưu balance hiện tại nhưng không cộng lại vào baseMoney
     currentUser.money = balance;
     localStorage.setItem("currentUser", JSON.stringify(currentUser));
 }

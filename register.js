@@ -87,7 +87,8 @@ function register() {
     password: password,
 
     money: 10000,     // 🎁 mặc định 10k
-
+    baseMoney: 10000,
+    
     vip: 0,           // chưa VIP
     myRef: myRef,    // mã giới thiệu riêng
     refBy: refInput || null,
