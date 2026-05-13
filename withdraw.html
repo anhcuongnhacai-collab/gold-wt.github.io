@@ -112,10 +112,9 @@ let totalWithdrawSuccess = 0;
 let totalWithdrawPending = 0;
 
 function recalcBalance(){
-    const balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess;
-    const available = balance - totalWithdrawPending;
-    moneyEl.innerText = "₫" + available.toLocaleString("vi-VN");
-    return available;
+    const balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
+    moneyEl.innerText = "₫" + balance.toLocaleString("vi-VN");
+    return balance;
 }
 
 // Lắng nghe nạp tiền thành công
@@ -156,9 +155,11 @@ withdrawBtn.addEventListener("click", ()=>{
     if(amount < 50000){ alert("Rút tối thiểu 50.000đ"); return; }
     if(amount > available){ alert("Số dư không đủ"); return; }
 
-    // Trừ tiền ngay
-    currentUser.money = currentUser.money - amount;
+    // Trừ tiền ngay: cập nhật currentUser và pending
+    totalWithdrawPending += amount;
+    currentUser.money = (currentUser.money || currentUser.baseMoney) - amount;
     localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    recalcBalance();
 
     // Push giao dịch rút tiền pending lên Firebase
     push(ref(db,"withdraws"), {
