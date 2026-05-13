@@ -127,25 +127,37 @@ function updateBalanceUI(amount){
 }
 
 // Đồng bộ số dư với admin Firebase
-onValue(ref(db,"deposits"), snapDep=>{
-    onValue(ref(db,"withdraws"), snapW=>{
-        let totalDeposit = 0, totalWithdraw = 0;
-        snapDep.forEach(d=>{
-            let v = d.val();
-            if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit += Number(v.amount);
-        });
-        snapW.forEach(w=>{
-            let v = w.val();
-            if(v.phone===currentUser.phone && v.status==="Thành công") totalWithdraw += Number(v.amount);
-        });
-        let balance = (currentUser.money||0) + totalDeposit - totalWithdraw;
-updateBalanceUI(balance);
+let totalDeposit = 0;
+let totalWithdraw = 0;
 
-// Đồng bộ số dư với localStorage
-currentUser.money = balance;
-localStorage.setItem("currentUser", JSON.stringify(currentUser));
+// Lắng nghe nạp tiền
+onValue(ref(db,"deposits"), snapDep=>{
+    totalDeposit = 0;
+    snapDep.forEach(d=>{
+        let v = d.val();
+        if(v.phone === currentUser.phone && v.status === "Thành công") totalDeposit += Number(v.amount);
     });
+    updateBalance();
 });
+
+// Lắng nghe rút tiền
+onValue(ref(db,"withdraws"), snapW=>{
+    totalWithdraw = 0;
+    snapW.forEach(w=>{
+        let v = w.val();
+        if(v.phone === currentUser.phone && v.status === "Thành công") totalWithdraw += Number(v.amount);
+    });
+    updateBalance();
+});
+
+// Cập nhật số dư
+function updateBalance(){
+    let balance = (currentUser.money||0) + totalDeposit - totalWithdraw;
+    updateBalanceUI(balance);
+    currentUser.money = balance;
+    localStorage.setItem("currentUser", JSON.stringify(currentUser));
+}
+
 </script>
 
 </body>
