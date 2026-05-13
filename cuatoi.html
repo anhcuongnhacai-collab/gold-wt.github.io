@@ -16,7 +16,6 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 .profile{ text-align:center; margin-top:20px; }
 .avatar{ width:85px; height:85px; border-radius:50%; background:#6bc1ff; margin:auto; display:flex; justify-content:center; align-items:center; }
 .avatar i{ font-size:45px; color:white; }
-.user-id{ margin-top:10px; color:#777; font-size:14px; }
 /* BALANCE */
 .balance-box{ display:flex; gap:10px; margin-top:20px; }
 .balance-item{ flex:1; background:#eee; padding:14px; border-radius:12px; }
@@ -99,7 +98,7 @@ function goIntro(){ window.location.href="intro.html"; }
 function goWithdraw(){ window.location.href="withdraw.html"; }
 function goDeposit(){ window.location.href="deposit.html"; }
 function goBank(){ window.location.href="bank.html"; }
-function goSupport(){ window.location.href="support.html"; } // tai nghe
+function goSupport(){ window.location.href="support.html"; }
 function goGroup(){ window.open("https://t.me/GOLDWT1","_blank"); }
 function goHistory(){ window.location.href="history.html"; }
 function logout(){
@@ -107,7 +106,6 @@ function logout(){
     window.location.href="index.html";
 }
 
-// Gán tất cả hàm ra window để onclick inline hoạt động
 window.goHome = goHome;
 window.goProfilePage = goProfilePage;
 window.goIntro = goIntro;
@@ -120,47 +118,47 @@ window.goHistory = goHistory;
 window.logout = logout;
 document.getElementById("logoutBtn").onclick = logout;
 
-// Hàm cập nhật số dư
+// ============================
+// HIỂN THỊ SỐ DƯ
+// ============================
 function updateBalanceUI(amount){
     document.getElementById("balance").innerText = "₫"+Number(amount).toLocaleString("vi-VN");
     document.getElementById("withdraw").innerText = "₫"+Number(amount).toLocaleString("vi-VN");
 }
 
-// Đồng bộ số dư với admin Firebase
+// ============================
+// LẮNG NGHE GIAO DỊCH
+// ============================
 let totalDeposit = 0;
 let totalWithdraw = 0;
 
-// Lắng nghe nạp tiền
 onValue(ref(db,"deposits"), snapDep => {
     totalDeposit = 0;
-    snapDep.forEach(d => {
+    snapDep.forEach(d=>{
         let v = d.val();
-        if(v.phone === currentUser.phone && v.status === "Thành công") totalDeposit += Number(v.amount);
+        if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit += Number(v.amount);
     });
     updateBalance();
 });
 
 onValue(ref(db,"withdraws"), snapW => {
     totalWithdraw = 0;
-    snapW.forEach(w => {
+    snapW.forEach(w=>{
         let v = w.val();
-        if(v.phone === currentUser.phone && v.status === "Thành công") totalWithdraw += Number(v.amount);
+        if(v.phone===currentUser.phone){
+            // Nếu rút đã trừ tiền ngay khi submit → chỉ tính các rút đã duyệt thành công
+            if(v.status==="Thành công") totalWithdraw += Number(v.amount);
+        }
     });
     updateBalance();
 });
 
-// Cập nhật số dư
 function updateBalance(){
-    // dùng baseMoney làm gốc, không lấy currentUser.money
-    let balance = (currentUser.baseMoney || 10000) + totalDeposit - totalWithdraw;
+    // Sử dụng currentUser.money đã trừ khi rút tiền
+    let balance = currentUser.money + totalDeposit; 
     updateBalanceUI(balance);
-
-    // lưu balance hiện tại nhưng không cộng lại vào baseMoney
-    currentUser.money = balance;
     localStorage.setItem("currentUser", JSON.stringify(currentUser));
 }
-
 </script>
-
 </body>
 </html>
