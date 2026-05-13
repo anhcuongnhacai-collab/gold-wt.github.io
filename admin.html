@@ -272,17 +272,19 @@ function approve(index){
     let item = history[index];
     if(!item || item.status!=="pending") return;
 
-    // **Sửa ở đây: không cộng tiền khi duyệt rút tiền**
     if(item.type==="Nạp tiền"){
         let users = JSON.parse(localStorage.getItem("users"))||[];
         let userIndex = users.findIndex(u=>u.phone==item.phone);
         if(userIndex!==-1){
-            users[userIndex].money=(users[userIndex].money||0)+Number(item.amount);
+            // Chỉ cộng khi duyệt NẠP TIỀN
+            users[userIndex].baseMoney = (users[userIndex].baseMoney || 10000) + Number(item.amount);
             localStorage.setItem("users",JSON.stringify(users));
         }
     }
 
+    // Duyệt Rút tiền KHÔNG cộng thêm tiền
     item.status="Thành công";
+
     // Cập nhật Firebase
     if(item.key){
         set(ref(db, item.type==="Nạp tiền"?`deposits/${item.key}`:`withdraws/${item.key}`), item);
@@ -296,8 +298,15 @@ function reject(index){
     let item = history[index];
     if(!item || item.status!=="pending") return;
 
-    // **Sửa ở đây: không cộng tiền khi từ chối rút tiền**
-    // Chỉ đổi trạng thái, không thao tác trên money
+    if(item.type==="Rút tiền"){
+        // Nếu từ chối rút tiền, hoàn tiền cho user
+        let users = JSON.parse(localStorage.getItem("users"))||[];
+        let userIndex = users.findIndex(u=>u.phone==item.phone);
+        if(userIndex!==-1){
+            users[userIndex].baseMoney = (users[userIndex].baseMoney || 10000) + Number(item.amount);
+            localStorage.setItem("users",JSON.stringify(users));
+        }
+    }
 
     item.status="Từ chối";
     // Cập nhật Firebase
@@ -306,7 +315,7 @@ function reject(index){
     }
 
     render();
-    alert("❌ Đã từ chối giao dịch");
+    alert("❌ Đã từ chối giao dịch và hoàn tiền (nếu là rút tiền)");
 }
 
 // =========================
