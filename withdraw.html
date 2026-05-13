@@ -25,7 +25,6 @@ body{background:#f5f5f5;display:flex;justify-content:center;}
 </head>
 <body>
 <div class="container">
-
   <div class="header">
     <i class="fa-solid fa-arrow-left back"></i>
     Rút tiền
@@ -57,116 +56,110 @@ body{background:#f5f5f5;display:flex;justify-content:center;}
   </div>
 
   <button class="btn" id="withdrawBtn">Xác nhận rút tiền</button>
-
 </div>
 
 <script type="module">
-import { db } from "./firebase-config.js";
-import { ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+import { db, ref, push, onValue } from "./firebase-config.js";
 
-// Lấy user hiện tại
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href="index.html";
 if(!currentUser.baseMoney) currentUser.baseMoney = 10000;
 
-// Elements
-const moneyEl = document.getElementById("money");
+const bankData = JSON.parse(localStorage.getItem("bankInfo"));
 const bankSelect = document.getElementById("bankSelect");
 const bankInfoBox = document.getElementById("bankInfo");
 const ownerSpan = document.getElementById("owner");
 const numberSpan = document.getElementById("number");
+const moneyDisplay = document.getElementById("money");
 const withdrawInput = document.getElementById("withdrawInput");
-const withdrawBtn = document.getElementById("withdrawBtn");
 
-// Load bank info
-let bankData = JSON.parse(localStorage.getItem("bankInfo"));
-if(bankData){
-    const option = document.createElement("option");
-    option.value = bankData.bank;
-    option.innerText = bankData.bank;
-    bankSelect.appendChild(option);
-}
-function showBankInfo(){
-    const selected = bankSelect.value;
-    if(bankData && selected === bankData.bank){
-        bankInfoBox.style.display="block";
-        ownerSpan.innerText = bankData.name;
-        numberSpan.innerText = bankData.number;
-    } else bankInfoBox.style.display="none";
-}
-bankSelect.addEventListener("change", showBankInfo);
-
-// Tổng
 let totalDeposit = 0;
 let totalWithdrawSuccess = 0;
 let totalWithdrawPending = 0;
 
-// Cập nhật balance và available
-function recalcBalance(){
-    let balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
-    moneyEl.innerText = "₫"+balance.toLocaleString("vi-VN");
-    return balance;
+// --- LOAD NGÂN HÀNG ---
+if(bankData){
+  const option = document.createElement("option");
+  option.value = bankData.bank;
+  option.innerText = bankData.bank;
+  bankSelect.appendChild(option);
 }
 
-// Lắng nghe nạp tiền
-onValue(ref(db,"deposits"), snap => {
-    totalDeposit = 0;
-    snap.forEach(s=>{
-        let v = s.val();
-        if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit += Number(v.amount);
-    });
-    recalcBalance();
+function showBankInfo(){
+  const selected = bankSelect.value;
+  if(bankData && selected===bankData.bank){
+    bankInfoBox.style.display = "block";
+    ownerSpan.innerText = bankData.name;
+    numberSpan.innerText = bankData.number;
+  } else bankInfoBox.style.display = "none";
+}
+bankSelect.addEventListener("change", showBankInfo);
+
+// --- QUAY LẠI ---
+document.querySelector(".back").addEventListener("click",()=>window.location.href="cuatoi.html");
+
+// --- CẬP NHẬT SỐ DƯ ---
+function updateBalanceUI(){
+  const balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess;
+  const available = balance - totalWithdrawPending;
+  moneyDisplay.innerText = "₫" + balance.toLocaleString("vi-VN");
+}
+
+// --- LẮNG NGHE DATABASE ---
+onValue(ref(db,"deposits"), snap=>{
+  totalDeposit=0;
+  snap.forEach(s=>{
+    const v=s.val();
+    if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit+=Number(v.amount);
+  });
+  updateBalanceUI();
 });
 
-// Lắng nghe rút tiền
 onValue(ref(db,"withdraws"), snap=>{
-    totalWithdrawSuccess = 0;
-    totalWithdrawPending = 0;
-    snap.forEach(s=>{
-        let v = s.val();
-        if(v.phone===currentUser.phone){
-            if(v.status==="Thành công") totalWithdrawSuccess += Number(v.amount);
-            else if(v.status==="pending") totalWithdrawPending += Number(v.amount);
-        }
-    });
-    recalcBalance();
+  totalWithdrawSuccess=0;
+  totalWithdrawPending=0;
+  snap.forEach(s=>{
+    const v=s.val();
+    if(v.phone===currentUser.phone){
+      if(v.status==="Thành công") totalWithdrawSuccess+=Number(v.amount);
+      else if(v.status==="pending") totalWithdrawPending+=Number(v.amount);
+    }
+  });
+  updateBalanceUI();
 });
 
-// ----------------- RÚT TIỀN -----------------
-withdrawBtn.addEventListener("click", ()=>{
-    const amount = Number(withdrawInput.value);
-    const available = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
+// --- RÚT TIỀN ---
+document.getElementById("withdrawBtn").addEventListener("click",()=>{
+  const amount = Number(withdrawInput.value);
+  const selectedBank = bankSelect.value;
 
-    if(!bankSelect.value){ alert("Vui lòng chọn ngân hàng"); return; }
-    if(amount<50000){ alert("Rút tối thiểu 50.000đ"); return; }
-    if(amount>available){ alert("Số dư không đủ"); return; }
+  const balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess;
+  const available = balance - totalWithdrawPending;
 
-    // Trừ ngay balance tổng và pending
-    currentUser.baseMoney -= amount; // Trừ balance gốc
-    totalWithdrawPending += amount;
-    localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    recalcBalance();
+  if(!selectedBank){ alert("Vui lòng chọn ngân hàng"); return; }
+  if(amount < 50000){ alert("Rút tối thiểu 50.000đ"); return; }
+  if(amount > available){ alert("Số dư không đủ"); return; }
 
-    // Push lên Firebase
-    push(ref(db,"withdraws"),{
-        id: Date.now(),
-        phone: currentUser.phone,
-        username: currentUser.username||"",
-        amount: amount,
-        bank: bankData.bank,
-        bankOwner: bankData.name,
-        bankNumber: bankData.number,
-        status: "pending",
-        time: new Date().toLocaleString("vi-VN")
-    });
+  // Thêm giao dịch rút tiền, status pending
+  push(ref(db,"withdraws"),{
+    id: Date.now(),
+    phone: currentUser.phone,
+    username: currentUser.username||"",
+    type: "Rút tiền",
+    amount: amount,
+    bank: bankData?.bank||"",
+    bankOwner: bankData?.name||"",
+    bankNumber: bankData?.number||"",
+    time: new Date().toLocaleString("vi-VN"),
+    status: "pending"
+  });
 
-    alert("Yêu cầu rút tiền đã tạo. Admin sẽ duyệt.");
-    window.location.href="cuatoi.html";
-});
+  // Tăng pending để trừ số dư ngay
+  totalWithdrawPending += amount;
+  updateBalanceUI();
 
-// Quay lại
-document.querySelector(".back").addEventListener("click", ()=>{
-    window.location.href="cuatoi.html";
+  alert("Yêu cầu rút tiền đã được gửi.\nĐơn đang chờ admin xử lý.");
+  window.location.href="cuatoi.html";
 });
 </script>
 </body>
