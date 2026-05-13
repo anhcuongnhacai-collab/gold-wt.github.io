@@ -13,7 +13,8 @@ const firebaseConfig = {
   storageBucket: "gold-wt.firebasestorage.app",
   messagingSenderId: "89848178654",
   appId: "1:89848178654:web:4e9ae1c49a42baff221f4f",
-  measurementId: "G-5L7PCHEX7H"
+  measurementId: "G-5L7PCHEX7H",
+  databaseURL: "https://gold-wt-default-rtdb.firebaseio.com"
 };
 
 // Init Firebase

@@ -300,66 +300,78 @@ push(ref(db, "deposits"), {
     let link = "";
 
     if(method === "QR"){
-        link = "https://bank-qr-demo.com/pay?amount=" + money;
+        link = "images/qr.jpg?" + money;
     }else{
-        link = "https://me.momo.vn/nhantien1207?amount=" + money;
+        link = "momo.html" ;
     }
 
     /* Popup thanh toán */
-    let box = document.createElement("div");
+let box = document.createElement("div");
 
-    box.innerHTML = `
+box.innerHTML = `
+<div style="
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,.5);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+">
     <div style="
-        position:fixed;
-        top:0;
-        left:0;
-        width:100%;
-        height:100%;
-        background:rgba(0,0,0,.5);
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        z-index:9999;
+        background:white;
+        padding:25px;
+        border-radius:15px;
+        text-align:center;
+        width:300px;
+        position:relative; /* Thêm để đặt nút X */
     ">
-        <div style="
-            background:white;
-            padding:25px;
-            border-radius:15px;
-            text-align:center;
-            width:300px;
+        <!-- Nút đóng popup -->
+        <span style="
+            position:absolute;
+            top:10px;
+            right:10px;
+            font-size:20px;
+            font-weight:bold;
+            cursor:pointer;
+        " onclick="this.parentElement.parentElement.remove()">×</span>
+
+        <h3>Yêu cầu nạp tiền đã được gửi</h3>
+
+        <p style="margin-top:10px;">
+            Số tiền: ${money.toLocaleString("vi-VN")}đ
+        </p>
+
+        <p style="
+            margin-top:10px;
+            font-size:14px;
+            color:#666;
         ">
-            <h3>Yêu cầu nạp tiền đã được gửi</h3>
+            Giao dịch đang chờ admin duyệt
+        </p>
 
-            <p style="margin-top:10px;">
-                Số tiền: ${money.toLocaleString("vi-VN")}đ
-            </p>
-
-            <p style="
-                margin-top:10px;
-                font-size:14px;
-                color:#666;
+        <button
+            onclick="window.location.href='${link}'"
+            style="
+                margin-top:15px;
+                padding:10px 20px;
+                background:orange;
+                color:white;
+                border:none;
+                border-radius:10px;
+                cursor:pointer;
             ">
-                Giao dịch đang chờ admin duyệt
-            </p>
-
-            <button
-                onclick="window.location.href='${link}'"
-                style="
-                    margin-top:15px;
-                    padding:10px 20px;
-                    background:orange;
-                    color:white;
-                    border:none;
-                    border-radius:10px;
-                    cursor:pointer;
-                ">
-                Thanh toán
-            </button>
-        </div>
+            Thanh toán
+        </button>
     </div>
-    `;
+</div>
+`;
 
-    document.body.appendChild(box);
+document.body.appendChild(box);
+
 }
 </script>
 
