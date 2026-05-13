@@ -38,9 +38,12 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 </head>
 <body>
 <div class="container">
+
 <div class="title">Của tôi</div>
+
 <!-- Tai nghe -->
 <div class="top-icon" onclick="goSupport()"><i class="fa-solid fa-headphones"></i></div>
+
 <!-- PROFILE -->
 <div class="profile">
 <div class="avatar">
@@ -58,6 +61,7 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 </div>
 </div>
 </div>
+
 <!-- MENU -->
 <div class="menu">
 <div class="menu-item" onclick="goWithdraw()"><div class="left"><div class="icon"><i class="fa-solid fa-arrow-up"></i></div><div class="text">Rút tiền</div></div><div class="arrow"><i class="fa-solid fa-angle-right"></i></div></div>
@@ -69,6 +73,7 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 <div class="menu-item" id="logoutBtn"><div class="left"><div class="icon"><i class="fa-solid fa-power-off"></i></div><div class="text">Đăng xuất</div></div><div class="arrow"><i class="fa-solid fa-angle-right"></i></div></div>
 </div>
 </div>
+
 <!-- NAV BAR -->
 <div class="bottom-nav">
 <div class="nav-item" onclick="goHome()"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Trang chủ</span></div>
@@ -80,12 +85,16 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 <script type="module">
 import { db, ref, onValue } from "./firebase-config.js";
 
+// Lấy user hiện tại
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href = "index.html";
-if(!currentUser.baseMoney) currentUser.baseMoney = currentUser.money || 10000;
+
+// Mặc định baseMoney nếu user mới
+if(!currentUser.baseMoney) currentUser.baseMoney = 10000;
+
 document.getElementById("userPhone").innerText = "+84 " + currentUser.phone;
 
-// hàm chuyển trang
+// ----------------- HÀM CHUYỂN TRANG -----------------
 function goHome(){ window.location.href="home.html"; }
 function goProfilePage(){ window.location.href="hoso.html"; }
 function goIntro(){ window.location.href="intro.html"; }
@@ -96,49 +105,62 @@ function goSupport(){ window.location.href="support.html"; }
 function goGroup(){ window.open("https://t.me/GOLDWT1","_blank"); }
 function goHistory(){ window.location.href="history.html"; }
 function logout(){ localStorage.removeItem("currentUser"); window.location.href="index.html"; }
-window.goHome = goHome; window.goProfilePage = goProfilePage;
-window.goIntro = goIntro; window.goWithdraw = goWithdraw;
-window.goDeposit = goDeposit; window.goBank = goBank; window.goSupport = goSupport;
-window.goGroup = goGroup; window.goHistory = goHistory; window.logout = logout;
+
+// Gán ra window
+window.goHome = goHome;
+window.goProfilePage = goProfilePage;
+window.goIntro = goIntro;
+window.goWithdraw = goWithdraw;
+window.goDeposit = goDeposit;
+window.goBank = goBank;
+window.goSupport = goSupport;
+window.goGroup = goGroup;
+window.goHistory = goHistory;
+window.logout = logout;
 document.getElementById("logoutBtn").onclick = logout;
 
-// Hàm cập nhật số dư UI
-function updateBalanceUI(amount){
-    document.getElementById("balance").innerText = "₫"+Number(amount).toLocaleString("vi-VN");
-    document.getElementById("withdraw").innerText = "₫"+Number(amount).toLocaleString("vi-VN");
+// ----------------- HÀM CẬP NHẬT SỐ DƯ -----------------
+function updateBalanceUI(balance, available){
+    document.getElementById("balance").innerText = "₫"+Number(balance).toLocaleString("vi-VN");
+    document.getElementById("withdraw").innerText = "₫"+Number(available).toLocaleString("vi-VN");
 }
 
-// Đồng bộ với withdraw và admin
+// Biến tổng
 let totalDeposit = 0;
-let totalWithdraw = 0;
+let totalWithdrawSuccess = 0;
+let totalWithdrawPending = 0;
 
-// Lắng nghe nạp tiền thành công
-onValue(ref(db,"deposits"), snap => {
+// ----------------- LẮNG NGHE DATABASE -----------------
+function recalcBalance(){
+    let balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess;
+    let available = balance - totalWithdrawPending; // số có thể rút thực tế
+    updateBalanceUI(balance, available);
+}
+
+// Lắng nghe nạp tiền
+onValue(ref(db, "deposits"), snap => {
     totalDeposit = 0;
-    snap.forEach(d => {
-        let v = d.val();
+    snap.forEach(s=>{
+        let v = s.val();
         if(v.phone === currentUser.phone && v.status === "Thành công") totalDeposit += Number(v.amount);
     });
-    updateBalance();
+    recalcBalance();
 });
 
-// Lắng nghe rút tiền (bao gồm pending) để số dư trừ luôn khi user rút
-onValue(ref(db,"withdraws"), snap => {
-    totalWithdraw = 0;
-    snap.forEach(w => {
-        let v = w.val();
-        if(v.phone === currentUser.phone && (v.status==="Thành công" || v.status==="pending")) totalWithdraw += Number(v.amount);
+// Lắng nghe rút tiền
+onValue(ref(db, "withdraws"), snap => {
+    totalWithdrawSuccess = 0;
+    totalWithdrawPending = 0;
+    snap.forEach(s=>{
+        let v = s.val();
+        if(v.phone === currentUser.phone){
+            if(v.status === "Thành công") totalWithdrawSuccess += Number(v.amount);
+            else if(v.status === "pending") totalWithdrawPending += Number(v.amount);
+        }
     });
-    updateBalance();
+    recalcBalance();
 });
-
-function updateBalance(){
-    let balance = (currentUser.baseMoney || 10000) + totalDeposit - totalWithdraw;
-    currentUser.money = balance;
-    localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    updateBalanceUI(balance);
-}
-
 </script>
+
 </body>
 </html>
