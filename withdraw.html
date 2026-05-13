@@ -69,14 +69,17 @@ let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href="index.html";
 if(!currentUser.baseMoney) currentUser.baseMoney = 10000;
 
+// Elements
 const moneyEl = document.getElementById("money");
-
-// Ngân hàng
-let bankData = JSON.parse(localStorage.getItem("bankInfo"));
 const bankSelect = document.getElementById("bankSelect");
 const bankInfoBox = document.getElementById("bankInfo");
 const ownerSpan = document.getElementById("owner");
 const numberSpan = document.getElementById("number");
+const withdrawInput = document.getElementById("withdrawInput");
+const withdrawBtn = document.getElementById("withdrawBtn");
+
+// Load bank info
+let bankData = JSON.parse(localStorage.getItem("bankInfo"));
 if(bankData){
     const option = document.createElement("option");
     option.value = bankData.bank;
@@ -86,73 +89,66 @@ if(bankData){
 function showBankInfo(){
     const selected = bankSelect.value;
     if(bankData && selected === bankData.bank){
-        bankInfoBox.style.display = "block";
+        bankInfoBox.style.display="block";
         ownerSpan.innerText = bankData.name;
         numberSpan.innerText = bankData.number;
     } else bankInfoBox.style.display="none";
 }
 bankSelect.addEventListener("change", showBankInfo);
 
-// ----------------------------
-// SỐ DƯ & PENDING
-// ----------------------------
+// Tổng
 let totalDeposit = 0;
 let totalWithdrawSuccess = 0;
 let totalWithdrawPending = 0;
 
-// tính số dư hiển thị
+// Cập nhật balance và available
 function recalcBalance(){
-    const balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
-    moneyEl.innerText = "₫" + balance.toLocaleString("vi-VN");
+    let balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
+    moneyEl.innerText = "₫"+balance.toLocaleString("vi-VN");
     return balance;
 }
 
-// Lắng nghe nạp tiền thành công
-onValue(ref(db, "deposits"), snap => {
+// Lắng nghe nạp tiền
+onValue(ref(db,"deposits"), snap => {
     totalDeposit = 0;
-    snap.forEach(s => {
-        const v = s.val();
-        if(v.phone === currentUser.phone && v.status === "Thành công") totalDeposit += Number(v.amount);
+    snap.forEach(s=>{
+        let v = s.val();
+        if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit += Number(v.amount);
     });
     recalcBalance();
 });
 
 // Lắng nghe rút tiền
-onValue(ref(db, "withdraws"), snap => {
+onValue(ref(db,"withdraws"), snap=>{
     totalWithdrawSuccess = 0;
     totalWithdrawPending = 0;
-    snap.forEach(s => {
-        const v = s.val();
-        if(v.phone === currentUser.phone){
-            if(v.status === "Thành công") totalWithdrawSuccess += Number(v.amount);
-            else if(v.status === "pending") totalWithdrawPending += Number(v.amount);
+    snap.forEach(s=>{
+        let v = s.val();
+        if(v.phone===currentUser.phone){
+            if(v.status==="Thành công") totalWithdrawSuccess += Number(v.amount);
+            else if(v.status==="pending") totalWithdrawPending += Number(v.amount);
         }
     });
     recalcBalance();
 });
 
-// ----------------------------
-// NÚT RÚT TIỀN - TRỪ NGAY
-// ----------------------------
-const withdrawBtn = document.getElementById("withdrawBtn");
-const withdrawInput = document.getElementById("withdrawInput");
-
+// ----------------- RÚT TIỀN -----------------
 withdrawBtn.addEventListener("click", ()=>{
     const amount = Number(withdrawInput.value);
-    const balanceAvailable = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
+    const available = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
 
     if(!bankSelect.value){ alert("Vui lòng chọn ngân hàng"); return; }
-    if(amount < 50000){ alert("Rút tối thiểu 50.000đ"); return; }
-    if(amount > balanceAvailable){ alert("Số dư không đủ"); return; }
+    if(amount<50000){ alert("Rút tối thiểu 50.000đ"); return; }
+    if(amount>available){ alert("Số dư không đủ"); return; }
 
-    // Trừ ngay cả balance và available
+    // Trừ ngay balance tổng và pending
+    currentUser.baseMoney -= amount; // Trừ balance gốc
     totalWithdrawPending += amount;
-    currentUser.money = (currentUser.money || currentUser.baseMoney) - amount;
     localStorage.setItem("currentUser", JSON.stringify(currentUser));
     recalcBalance();
 
     // Push lên Firebase
-    push(ref(db,"withdraws"), {
+    push(ref(db,"withdraws"),{
         id: Date.now(),
         phone: currentUser.phone,
         username: currentUser.username||"",
