@@ -307,27 +307,47 @@ body{
 
 </div>
 
-<script>
-let currentUser = JSON.parse(localStorage.getItem("currentUser"));
-let users = JSON.parse(localStorage.getItem("users")) || [];
+<script type="module">
+// ------------------------------
+// IMPORT FIREBASE
+// ------------------------------
+import { db, ref, onValue } from "./firebase-config.js";
 
+// ------------------------------
+// LẤY THÔNG TIN NGƯỜI DÙNG
+// ------------------------------
+let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser){
-    window.location.href = "index.html";
+    window.location.href="index.html";
 }
 
-let user = users.find(u => u.phone == currentUser.phone);
-let money = user ? (user.money || 0) : 0;
+// ------------------------------
+// CẬP NHẬT UI SỐ DƯ
+// ------------------------------
+function updateBalanceUI(money){
+    document.getElementById("balance").innerText = "₫" + (money || 0).toLocaleString("vi-VN");
+    document.getElementById("withdraw").innerText = "₫" + (money || 0).toLocaleString("vi-VN");
+}
 
-document.getElementById("balance").innerText = "₫" + money.toLocaleString("vi-VN");
-document.getElementById("withdraw").innerText = "₫" + money.toLocaleString("vi-VN");
+// ------------------------------
+// LẮNG NGHE SỐ DƯ TRỰC TIẾP TỪ FIREBASE
+// ------------------------------
+onValue(ref(db, `users/${currentUser.phone}/money`), snapshot => {
+    let money = snapshot.val() || 0;
+    updateBalanceUI(money);
+});
+
+// ------------------------------
+// HIỂN THỊ SỐ ĐIỆN THOẠI
+// ------------------------------
 document.getElementById("userPhone").innerText = "+84 " + currentUser.phone;
 
-/* NAV */
+// ------------------------------
+// NAVIGATION VÀ MENU GIỮ NGUYÊN
+// ------------------------------
 function goHome(){ window.location.href="home.html"; }
 function goProfilePage(){ window.location.href="hoso.html"; }
 function goIntro(){ window.location.href="intro.html"; }
-
-/* MENU */
 function goWithdraw(){ window.location.href="withdraw.html"; }
 function goDeposit(){ window.location.href="deposit.html"; }
 function goBank(){ window.location.href="bank.html"; }
@@ -335,11 +355,12 @@ function goSupport(){ window.location.href="support.html"; }
 function goGroup(){ window.open("https://t.me/GOLDWT1","_blank"); }
 function goHistory(){ window.location.href="history.html"; }
 
-/* LOGOUT */
+// LOGOUT
 document.getElementById("logoutBtn").onclick = function(){
     localStorage.removeItem("currentUser");
     window.location.href="index.html";
 };
+
 </script>
 
 </body>
