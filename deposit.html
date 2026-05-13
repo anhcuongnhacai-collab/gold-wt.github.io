@@ -182,7 +182,14 @@ body{
 
 </div>
 
-<script>
+<script type="module">
+    import { db } from "./firebase-config.js";
+
+import {
+    ref,
+    push
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
 /* =========================
    BIẾN TOÀN CỤC
 ========================= */
@@ -274,6 +281,20 @@ function submitDeposit(){
         "history",
         JSON.stringify(history)
     );
+/* Lưu Firebase */
+push(ref(db, "deposits"), {
+    id: Date.now(),
+    phone: currentUser.phone,
+    username: currentUser.username || "",
+    type: "Nạp tiền",
+    amount: money,
+    method: method,
+    bank: method,
+    bankOwner: "",
+    bankNumber: "",
+    time: new Date().toLocaleString("vi-VN"),
+    status: "pending"
+});
 
     /* Tạo link thanh toán */
     let link = "";
