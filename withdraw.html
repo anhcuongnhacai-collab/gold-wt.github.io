@@ -59,16 +59,14 @@ body{background:#f5f5f5;display:flex;justify-content:center;}
 </div>
 
 <script type="module">
-import { db } from "./firebase-config.js";
-import { ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+import { db, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
 // -----------------------------
-// Lấy user hiện tại
+// USER HIỆN TẠI
 // -----------------------------
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
-if(!currentUser){ alert("Vui lòng đăng nhập!"); window.location.href="index.html"; }
+if(!currentUser){ alert("Vui lòng đăng nhập"); window.location.href="index.html"; }
 
-// default baseMoney
 if(currentUser.baseMoney === undefined) currentUser.baseMoney = 10000;
 let balance = currentUser.money || currentUser.baseMoney;
 
@@ -81,14 +79,15 @@ const bankInfo = document.getElementById("bankInfo");
 const ownerEl = document.getElementById("owner");
 const numberEl = document.getElementById("number");
 
-// Thêm ngân hàng mẫu
+// -----------------------------
+// NGÂN HÀNG MẪU
+// -----------------------------
 const bankData = { bank:"Vietcombank", name:"Nguyen Van A", number:"1234567890" };
 const option = document.createElement("option");
 option.value = bankData.bank;
 option.innerText = bankData.bank;
 bankSelect.appendChild(option);
 
-// Hiển thị thông tin ngân hàng
 bankSelect.addEventListener("change", ()=>{
     if(bankSelect.value === bankData.bank){
         bankInfo.style.display = "block";
@@ -97,22 +96,24 @@ bankSelect.addEventListener("change", ()=>{
     } else bankInfo.style.display = "none";
 });
 
-// Hiển thị số dư
-function updateUI(){
-    moneyEl.innerText = "₫" + Number(balance).toLocaleString("vi-VN");
+// -----------------------------
+// CẬP NHẬT SỐ DƯ
+// -----------------------------
+function updateUI(balance, available){
+    moneyEl.innerText = "₫"+Number(balance).toLocaleString("vi-VN");
 }
-updateUI();
 
+// -----------------------------
 // BACK
+// -----------------------------
 document.querySelector(".back").addEventListener("click", ()=>window.location.href="cuatoi.html");
 
 // -----------------------------
-// Rút tiền
+// RÚT TIỀN
 // -----------------------------
 withdrawBtn.addEventListener("click", ()=>{
     const amount = Number(withdrawInput.value);
-    const selectedBank = bankSelect.value;
-    if(!selectedBank){ alert("Vui lòng chọn ngân hàng"); return; }
+    if(!bankSelect.value){ alert("Vui lòng chọn ngân hàng"); return; }
     if(amount < 50000){ alert("Rút tối thiểu 50.000đ"); return; }
     if(amount > balance){ alert("Số dư không đủ"); return; }
 
@@ -120,7 +121,7 @@ withdrawBtn.addEventListener("click", ()=>{
     balance -= amount;
     currentUser.money = balance;
     localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    updateUI();
+    updateUI(balance, balance);
 
     // Push giao dịch pending lên Firebase
     push(ref(db,"withdraws"), {
@@ -128,7 +129,7 @@ withdrawBtn.addEventListener("click", ()=>{
         phone: currentUser.phone,
         username: currentUser.username||"",
         amount: amount,
-        bank: selectedBank,
+        bank: bankData.bank,
         bankOwner: bankData.name,
         bankNumber: bankData.number,
         status: "pending",
@@ -140,25 +141,24 @@ withdrawBtn.addEventListener("click", ()=>{
 });
 
 // -----------------------------
-// Đồng bộ số dư với admin
+// ĐỒNG BỘ SỐ DƯ VỚI ADMIN
 // -----------------------------
-onValue(ref(db,"withdraws"), snap => {
-    let totalWithdraw = 0;
-    snap.forEach(d=>{
-        let v = d.val();
-        if(v.phone===currentUser.phone && v.status==="Thành công"){
-            totalWithdraw += Number(v.amount);
-        } else if(v.phone===currentUser.phone && v.status==="Từ chối"){
-            // Nếu bị từ chối, hoàn lại tiền
-            balance += Number(v.amount);
+onValue(ref(db,"withdraws"), snap=>{
+    let totalSuccess = 0;
+    let totalPending = 0;
+    snap.forEach(s=>{
+        let v = s.val();
+        if(v.phone === currentUser.phone){
+            if(v.status === "Thành công") totalSuccess += Number(v.amount);
+            if(v.status === "pending") totalPending += Number(v.amount);
+            if(v.status === "Từ chối") balance += Number(v.amount); // hoàn lại tiền
         }
     });
-    balance = Math.max(0, balance);
+    balance = currentUser.baseMoney + totalSuccess - totalPending;
     currentUser.money = balance;
     localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    updateUI();
+    updateUI(balance, balance - totalPending);
 });
-
 </script>
 </body>
 </html>
