@@ -22,11 +22,13 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
 
 <main class="flex-1 overflow-y-auto pb-20 p-4 space-y-4">
 
+<!-- TỔNG SỐ DƯ -->
 <div class="bg-white rounded-2xl p-4 shadow">
   <div class="text-gray-500 text-sm">Tổng số dư</div>
   <div class="text-xl font-bold text-orange-500" id="balance2">0₫</div>
 </div>
 
+<!-- SUMMARY -->
 <div class="grid grid-cols-2 gap-3">
   <div class="bg-white p-3 rounded-xl shadow">
     <div class="text-xs text-gray-500">Tổng vốn đã mua</div>
@@ -34,8 +36,8 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
   </div>
 
   <div class="bg-white p-3 rounded-xl shadow">
-    <div class="text-xs text-gray-500">Có thể rút</div>
-    <div class="font-bold text-blue-500" id="withdrawable">0₫</div>
+    <div class="text-xs text-gray-500">Tổng lợi nhận (1 ngày)</div>
+    <div class="font-bold text-blue-500" id="dailyProfit">0₫</div>
   </div>
 </div>
 
@@ -44,6 +46,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
   <div class="font-bold text-green-600" id="totalProfit">0₫</div>
 </div>
 
+<!-- VIP LIST -->
 <div class="space-y-3">
   <h2 class="font-bold">Gói VIP đã mua</h2>
   <div id="list"></div>
@@ -51,6 +54,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
 
 </main>
 
+<!-- NAV -->
 <nav class="bg-white border-t border-gray-200 absolute bottom-0 w-full flex justify-around py-2">
   <button class="flex flex-col items-center text-gray-400" onclick="goHome()">
     <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24">
@@ -84,7 +88,6 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
 <script type="module">
 import { db, ref, onValue } from "./firebase-config.js";
 
-// Lấy user hiện tại
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href="login.html";
 
@@ -98,15 +101,18 @@ let totalDeposit = 0;
 let totalWithdrawSuccess = 0;
 let totalWithdrawPending = 0;
 
-// Cập nhật số dư chính xác như cuatoi.html
+// Hàm cập nhật số dư và lợi nhuận
 function updateBalance(){
+    // Tổng deposit
     onValue(ref(db,"deposits"), snapshot=>{
         totalDeposit=0;
         snapshot.forEach(s=>{
             let v=s.val();
-            if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit += Number(v.amount);
+            if(v.phone===currentUser.phone && v.status==="Thành công")
+                totalDeposit += Number(v.amount);
         });
 
+        // Tổng withdraw
         onValue(ref(db,"withdraws"), snap=>{
             totalWithdrawSuccess=0;
             totalWithdrawPending=0;
@@ -118,26 +124,33 @@ function updateBalance(){
                 }
             });
 
+            // Tổng số dư chính xác
             let totalBalance = (user.baseMoney||0) + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
             document.getElementById("balance2").innerText = totalBalance.toLocaleString("vi-VN")+"₫";
 
-            // VIP profit
+            // Lợi nhuận 1 ngày từ tất cả VIP
             let now=Date.now();
-            let vipEarn=0;
+            let dailyProfitTotal=0;
             vipHistory.filter(v=>v.phone===currentUser.phone).forEach(v=>{
                 if(!v.lastClaim) v.lastClaim=v.startTime;
+                // Nếu 24h kể từ lastClaim → cộng vào baseMoney
                 let diff=now - v.lastClaim;
-                if(diff>0){
-                    let days=Math.floor(diff/(1000*60*60*24));
-                    vipEarn += v.dailyProfit*days;
+                if(diff>=24*60*60*1000){
+                    let days=Math.floor(diff/(24*60*60*1000));
+                    user.baseMoney += v.dailyProfit*days;
+                    v.lastClaim += days*24*60*60*1000;
                 }
+                dailyProfitTotal += v.dailyProfit; // tổng lợi nhuận 1 ngày
             });
-            document.getElementById("withdrawable").innerText = vipEarn.toLocaleString("vi-VN")+"₫";
+            document.getElementById("dailyProfit").innerText = dailyProfitTotal.toLocaleString("vi-VN")+"₫";
+
+            localStorage.setItem("users", JSON.stringify(users));
+            localStorage.setItem("vipHistory", JSON.stringify(vipHistory));
         });
     });
 }
 
-// Load VIP
+// Load VIP đã mua
 function loadVIP(){
     let myVIP = vipHistory.filter(v=>v.phone===currentUser.phone);
     if(myVIP.length===0){
@@ -149,20 +162,15 @@ function loadVIP(){
     let html="", totalInvest=0, totalProfit=0;
     myVIP.forEach(v=>{
         let fullProfit=v.dailyProfit*80;
-        totalInvest += v.price;
-        totalProfit += fullProfit;
-
+        totalInvest+=v.price;
+        totalProfit+=fullProfit;
         let days=Math.floor((Date.now()-v.startTime)/(1000*60*60*24));
         if(days>80) days=80;
-
-        // Thời gian mua hàng
-        let purchaseDate = new Date(v.startTime);
-        let purchaseTimeStr = purchaseDate.toLocaleString("vi-VN",{hour12:false});
-
         html+=`<div class="bg-white p-3 rounded-xl shadow">
             <div class="font-bold">${v.name}</div>
             <div class="text-xs text-gray-500">Vốn: ${v.price.toLocaleString()}₫</div>
-            <div class="text-xs text-gray-500">Thời gian mua: ${purchaseTimeStr}</div>
+            <div class="text-xs text-purple-600">Thời gian mua: ${new Date(v.startTime).toLocaleDateString()}</div>
+            <div class="text-xs text-green-600">Lợi nhuận/ngày: ${v.dailyProfit.toLocaleString()}₫</div>
             <div class="text-xs text-green-600">Tổng lợi nhuận 80 ngày: ${fullProfit.toLocaleString()}₫</div>
             <div class="text-xs text-purple-600">Đã chạy: ${days}/80 ngày</div>
         </div>`;
@@ -181,7 +189,7 @@ window.goCuaToi = ()=>{ window.location.href="cuatoi.html"; }
 updateBalance();
 loadVIP();
 setInterval(updateBalance,60000);
-
 </script>
+
 </body>
 </html>
