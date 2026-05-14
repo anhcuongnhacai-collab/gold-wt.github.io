@@ -135,11 +135,12 @@ function updateBalance(){
                 if(!v.lastClaim) v.lastClaim=v.startTime;
                 // Nếu 24h kể từ lastClaim → cộng vào baseMoney
                 let diff=now - v.lastClaim;
-                if(diff>=24*60*60*1000){
-                    let days=Math.floor(diff/(24*60*60*1000));
-                    user.baseMoney += v.dailyProfit*days;
-                    v.lastClaim += days*24*60*60*1000;
-                }
+                if(diff >= 5*1000){  // 5 giây thay cho 24h
+    let days = Math.floor(diff / (5*1000));
+    user.baseMoney += v.dailyProfit * days;
+    v.lastClaim += days * 5*1000;
+}
+
                 dailyProfitTotal += v.dailyProfit; // tổng lợi nhuận 1 ngày
             });
             document.getElementById("dailyProfit").innerText = dailyProfitTotal.toLocaleString("vi-VN")+"₫";
