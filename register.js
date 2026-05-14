@@ -92,23 +92,44 @@ function register() {
 }
 
 /* ================= VIP + REF SYSTEM ================= */
-function upgradeVIP(phone) {
-  let users = JSON.parse(localStorage.getItem("users")) || [];
-  let user = users.find(u => u.phone === phone);
-  if (!user) return;
 
-  user.vip = 1;
+// Nâng cấp VIP và hoa hồng cho người giới thiệu
+function upgradeVIP(phone, vipName, vipPrice) {
+    let users = JSON.parse(localStorage.getItem("users")) || [];
+    let user = users.find(u => u.phone === phone);
+    if (!user) return;
 
-  if (user.refBy) {
-    let refUser = users.find(u => u.myRef === user.refBy);
-    if (refUser && user.vip === 1) {
-      refUser.money = (refUser.money || 0) + 20000;
-      alert("🎉 Người giới thiệu nhận +20.000đ!");
+    // Cập nhật VIP
+    user.vip = vipName;  // lưu tên VIP hoặc số cấp VIP
+    localStorage.setItem("users", JSON.stringify(users));
+
+    // Lưu vipHistory
+    let vipHistory = JSON.parse(localStorage.getItem("vipHistory")) || [];
+    vipHistory.push({
+        phone: user.phone,
+        name: vipName,
+        price: vipPrice,
+        startTime: Date.now()
+    });
+    localStorage.setItem("vipHistory", JSON.stringify(vipHistory));
+
+    // Thưởng cho người giới thiệu
+    if(user.refBy){
+        let refUser = users.find(u => u.myRef === user.refBy);
+        if(refUser){
+            let commission = vipPrice * 0.3; // 30% hoa hồng
+            refUser.money = (refUser.money || 0) + commission;
+            refUser.totalCommission = (refUser.totalCommission || 0) + commission;
+            refUser.refCount = (refUser.refCount || 0) + 1;
+
+            alert(`🎉 Người giới thiệu nhận ${commission.toLocaleString("vi-VN")}₫`);
+        }
+        localStorage.setItem("users", JSON.stringify(users));
     }
-  }
+}
 
   localStorage.setItem("users", JSON.stringify(users));
-}
+
 
 window.register = register;
 window.upgradeVIP = upgradeVIP;
