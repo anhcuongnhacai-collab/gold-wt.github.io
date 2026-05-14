@@ -4,36 +4,47 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lịch sử thanh toán</title>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
-body{background:#f3f3f3;display:flex;justify-content:center;}
-.container{width:360px;min-height:100vh;background:#f5f5f5;padding-bottom:30px;}
-.header{height:70px;background:#d90000;color:white;display:flex;align-items:center;justify-content:center;position:sticky;top:0;}
-.back{position:absolute;left:18px;font-size:28px;cursor:pointer;}
-.title{font-size:24px;font-weight:bold;}
-.user-box{background:white;padding:18px;margin-top:12px;display:flex;align-items:center;gap:14px;}
-.avatar{width:55px;height:55px;border-radius:50%;background:#7cc8ff;display:flex;justify-content:center;align-items:center;color:white;font-size:28px;}
-.phone{font-size:18px;font-weight:bold;}
-.history-list{margin-top:14px;padding:0 14px;}
-.history-item{background:white;border-radius:16px;padding:16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
-.left{display:flex;flex-direction:column;gap:8px;}
-.type{font-size:17px;font-weight:bold;}
-.time{color:#888;font-size:13px;}
-.right{text-align:right;}
-.money{font-size:18px;font-weight:bold;}
-.deposit{color:#00a650;}
-.withdraw{color:#ff3b30;}
-.status{margin-top:6px;font-size:13px;color:#666;}
-.empty{text-align:center;margin-top:80px;color:#888;font-size:18px;}
+*{ margin:0; padding:0; box-sizing:border-box; font-family:Arial; }
+body{ background:#f3f3f3; display:flex; justify-content:center; }
+.container{ width:360px; min-height:100vh; background:#f5f5f5; padding-bottom:30px; }
+
+/* HEADER */
+.header{ height:70px; background:#d90000; color:white; display:flex; align-items:center; justify-content:center; position:sticky; top:0; }
+.back{ position:absolute; left:18px; font-size:28px; cursor:pointer; }
+.title{ font-size:24px; font-weight:bold; }
+
+/* USER */
+.user-box{ background:white; padding:18px; margin-top:12px; display:flex; align-items:center; gap:14px; }
+.avatar{ width:55px; height:55px; border-radius:50%; background:#7cc8ff; display:flex; justify-content:center; align-items:center; color:white; font-size:28px; }
+.phone{ font-size:18px; font-weight:bold; }
+
+/* LIST */
+.history-list{ margin-top:14px; padding:0 14px; }
+.history-item{ background:white; border-radius:16px; padding:16px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
+.left{ display:flex; flex-direction:column; gap:8px; }
+.type{ font-size:17px; font-weight:bold; }
+.time{ color:#888; font-size:13px; }
+.right{ text-align:right; }
+.money{ font-size:18px; font-weight:bold; }
+.deposit{ color:#00a650; }
+.withdraw{ color:#ff3b30; }
+.status{ margin-top:6px; font-size:13px; color:#666; }
+
+/* EMPTY */
+.empty{ text-align:center; margin-top:80px; color:#888; font-size:18px; }
 </style>
 </head>
+
 <body>
 <div class="container">
 
     <!-- HEADER -->
     <div class="header">
-        <div class="back"><i class="fa-solid fa-angle-left"></i></div>
+        <div class="back" onclick="goBack()"><i class="fa-solid fa-angle-left"></i></div>
         <div class="title">Lịch sử thanh toán</div>
     </div>
 
@@ -51,54 +62,40 @@ body{background:#f3f3f3;display:flex;justify-content:center;}
 <script type="module">
 import { db, ref, onValue } from "./firebase-config.js";
 
-// -------------------- LẤY USER --------------------
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href="index.html";
+
 document.getElementById("userPhone").innerText = "+84 " + currentUser.phone;
 
-// -------------------- BACK BUTTON --------------------
-const backBtn = document.querySelector(".back");
-if(backBtn){
-    backBtn.addEventListener("click", ()=>{
-        window.location.href = "cuatoi.html";
-    });
-}
-
-// -------------------- LẤY LỊCH SỬ --------------------
 let history = [];
 
-// Lắng nghe nạp tiền
-onValue(ref(db,"deposits"), snap => {
-    snap.forEach(s => {
-        let item = s.val();
+// Lắng nghe NẠP TIỀN
+onValue(ref(db, "deposits"), snapshot => {
+    snapshot.forEach(child => {
+        let item = child.val();
+        item.key = child.key;
         if(item.phone === currentUser.phone){
             item.type = "Nạp tiền";
-            item.status = item.status || "Thành công";
             history.push(item);
         }
     });
     renderHistory();
 });
 
-// Lắng nghe rút tiền
-onValue(ref(db,"withdraws"), snap => {
-    snap.forEach(s => {
-        let item = s.val();
+// Lắng nghe RÚT TIỀN
+onValue(ref(db, "withdraws"), snapshot => {
+    snapshot.forEach(child => {
+        let item = child.val();
+        item.key = child.key;
         if(item.phone === currentUser.phone){
             item.type = "Rút tiền";
-            item.status = item.status || "pending";
             history.push(item);
         }
     });
     renderHistory();
 });
 
-// -------------------- FORMAT TIỀN --------------------
-function formatMoney(value){
-    return Number(value||0).toLocaleString("vi-VN") + "₫";
-}
-
-// -------------------- RENDER HISTORY --------------------
+// Render history, mới nhất lên đầu
 function renderHistory(){
     const list = document.getElementById("historyList");
     list.innerHTML = "";
@@ -108,8 +105,17 @@ function renderHistory(){
         return;
     }
 
-    // Sắp xếp mới nhất lên trên
-    history.sort((a,b) => (b.time || 0) - (a.time || 0));
+    // Sắp xếp thời gian mới nhất lên đầu
+    history.sort((a,b)=>{
+        const parseTime = t => {
+            if(!t) return 0;
+            let parts = t.split(','); // "dd/mm/yyyy, hh:mm:ss"
+            let datePart = parts[0].split('/').reverse().join('-');
+            let timePart = parts[1]||'00:00:00';
+            return new Date(datePart + ' ' + timePart).getTime();
+        }
+        return parseTime(b.time) - parseTime(a.time);
+    });
 
     history.forEach(item => {
         let typeClass = item.type === "Nạp tiền" ? "deposit" : "withdraw";
@@ -123,13 +129,19 @@ function renderHistory(){
                     <div class="time">${item.time || "-"}</div>
                 </div>
                 <div class="right">
-                    <div class="money ${typeClass}">${icon}${formatMoney(item.amount)}</div>
+                    <div class="money ${typeClass}">${icon}${Number(item.amount).toLocaleString("vi-VN")}₫</div>
                     <div class="status">${status}</div>
                 </div>
             </div>
         `;
     });
 }
+
+// Nút quay lại
+function goBack(){
+    window.location.href = "cuatoi.html";
+}
 </script>
+
 </body>
 </html>
