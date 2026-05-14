@@ -14,6 +14,7 @@ function createCaptcha() {
 }
 
 window.onload = createCaptcha;
+
 /* ================= AUTO REF ================= */
 function getRefFromURL(){
   const params = new URLSearchParams(window.location.search);
@@ -82,38 +83,29 @@ function register() {
   let myRef = phone + Math.floor(Math.random() * 999);
 
   let newUser = {
-    name: username,
+    username: username,      // ⚡ sửa ở đây để admin hiển thị đúng tên
     phone: phone,
     password: password,
 
-    money: 10000,     // 🎁 mặc định 10k
+    money: 10000,     
     baseMoney: 10000,
     
-    vip: 0,           // chưa VIP
-    myRef: myRef,    // mã giới thiệu riêng
+    vip: 0,           
+    myRef: myRef,    
     refBy: refInput || null,
-refCount: 0,
-totalCommission: 0
+    refCount: 0,
+    totalCommission: 0
   };
 
   users.push(newUser);
   localStorage.setItem("users", JSON.stringify(users));
-localStorage.setItem("currentUser", JSON.stringify(newUser));
+  localStorage.setItem("currentUser", JSON.stringify(newUser));
 
   alert("Đăng ký thành công!");
   window.location.href = "index.html";
 }
 
 /* ================= VIP + REF SYSTEM ================= */
-
-/*
-  RULE:
-  - Người A giới thiệu B
-  - A chỉ được +20k khi B:
-    + nạp tiền
-    + mua VIP1
-*/
-
 function upgradeVIP(phone) {
 
   let users = JSON.parse(localStorage.getItem("users")) || [];
@@ -125,17 +117,16 @@ function upgradeVIP(phone) {
 
   /* ===== THƯỞNG NGƯỜI GIỚI THIỆU ===== */
   if (user.refBy) {
-
     let refUser = users.find(u => u.myRef === user.refBy);
-
     if (refUser && user.vip === 1) {
-
       refUser.money = (refUser.money || 0) + 20000;
-
       alert("🎉 Người giới thiệu nhận +20.000đ!");
-
     }
   }
 
   localStorage.setItem("users", JSON.stringify(users));
 }
+
+window.createCaptcha = createCaptcha;
+window.register = register;
+window.upgradeVIP = upgradeVIP;
