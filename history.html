@@ -44,84 +44,83 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 <script type="module">
 import { db, ref, onValue } from "./firebase-config.js";
 
+// Lấy user hiện tại
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
-if(!currentUser) window.location.href="index.html";
+if(!currentUser) window.location.href = "index.html";
 document.getElementById("userPhone").innerText = "+84 " + currentUser.phone;
 
-let history = [];
+// -------------------- LẮNG NGHE DATABASE --------------------
+let historyListEl = document.getElementById("historyList");
+let allHistory = [];
 
-// Lắng nghe NẠP TIỀN
-onValue(ref(db, "deposits"), snapshot => {
-    snapshot.forEach(child => {
-        let item = child.val();
-        item.key = child.key;
-        if(item.phone === currentUser.phone){
-            item.type = "Nạp tiền";
-            history.push(item);
-        }
-    });
-    renderHistory();
-});
-
-// Lắng nghe RÚT TIỀN
-onValue(ref(db, "withdraws"), snapshot => {
-    snapshot.forEach(child => {
-        let item = child.val();
-        item.key = child.key;
-        if(item.phone === currentUser.phone){
-            item.type = "Rút tiền";
-            history.push(item);
-        }
-    });
-    renderHistory();
-});
-
-function renderHistory(){
-    const list = document.getElementById("historyList");
-    list.innerHTML = "";
-
-    if(history.length === 0){
-        list.innerHTML = `<div class="empty">Chưa có giao dịch nào</div>`;
+// render history
+function renderHistory(history){
+    historyListEl.innerHTML = "";
+    if(history.length===0){
+        historyListEl.innerHTML = `<div class="empty">Chưa có giao dịch nào</div>`;
         return;
     }
 
-    // Chuyển time sang Date để sort mới nhất lên đầu
-    history.sort((a,b)=>{
-        function parseTime(t){
-            if(!t) return 0;
-            const parts = t.split(',');
-            const dateParts = parts[0].split('/');
-            const timePart = parts[1] ? parts[1].trim() : "00:00:00";
-            const iso = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${timePart}`;
-            return new Date(iso).getTime();
-        }
-        return parseTime(b.time) - parseTime(a.time);
-    });
+    // Hiển thị mới nhất lên trên
+    history.sort((a,b)=> (b.id||0)-(a.id||0));
 
-    history.forEach(item => {
-        let typeClass = item.type === "Nạp tiền" ? "deposit" : "withdraw";
-        let icon = item.type === "Nạp tiền" ? "+" : "-";
-        let status = item.status || "pending";
+    history.forEach(item=>{
+        let typeClass = item.type==="Nạp tiền"?"deposit":"withdraw";
+        let icon = item.type==="Nạp tiền"?"+":"-";
 
-        list.innerHTML += `
+        let statusClass = item.status==="pending"?"pending":
+                          item.status==="Thành công"?"success":
+                          item.status==="Từ chối"?"reject":"";
+
+        historyListEl.innerHTML += `
             <div class="history-item">
                 <div class="left">
                     <div class="type">${item.type}</div>
-                    <div class="time">${item.time || "-"}</div>
+                    <div class="time">${item.time||"-"}</div>
                 </div>
                 <div class="right">
                     <div class="money ${typeClass}">${icon}${Number(item.amount).toLocaleString("vi-VN")}₫</div>
-                    <div class="status">${status}</div>
+                    <div class="status ${statusClass}">${item.status||"pending"}</div>
                 </div>
             </div>
         `;
     });
 }
 
-// Nút quay lại
+function updateHistory(){
+    let userHistory = allHistory.filter(item=>item.phone===currentUser.phone);
+    renderHistory(userHistory);
+}
+
+// Lắng nghe deposits
+onValue(ref(db,"deposits"), snapshot=>{
+    snapshot.forEach(child=>{
+        let item = child.val();
+        item.key = child.key;
+        allHistory = allHistory.filter(i=>!(i.key===item.key && i.type==="Nạp tiền"));
+        allHistory.push(item);
+    });
+    updateHistory();
+});
+
+// Lắng nghe withdraws
+onValue(ref(db,"withdraws"), snapshot=>{
+    snapshot.forEach(child=>{
+        let item = child.val();
+        item.key = child.key;
+        allHistory = allHistory.filter(i=>!(i.key===item.key && i.type==="Rút tiền"));
+        allHistory.push(item);
+    });
+    updateHistory();
+});
+
+// -------------------- BACK --------------------
 function goBack(){
     window.location.href = "cuatoi.html";
 }
+// Gán ra window để onclick HTML chắc chắn gọi được
+window.goBack = goBack;
+
 </script>
 
 </body>
