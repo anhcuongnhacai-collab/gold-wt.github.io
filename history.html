@@ -2,320 +2,133 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lịch sử thanh toán</title>
-
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <style>
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial,sans-serif;
-}
-
-body{
-    background:#f3f3f3;
-    display:flex;
-    justify-content:center;
-}
-
-.container{
-    width:360px;
-    min-height:100vh;
-    background:#f5f5f5;
-    padding-bottom:30px;
-}
-
-/* HEADER */
-
-.header{
-    height:70px;
-    background:#d90000;
-    color:white;
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    position:sticky;
-    top:0;
-}
-
-.back{
-    position:absolute;
-    left:18px;
-    font-size:28px;
-    cursor:pointer;
-}
-
-.title{
-    font-size:24px;
-    font-weight:bold;
-}
-
-/* USER */
-
-.user-box{
-    background:white;
-    padding:18px;
-    margin-top:12px;
-
-    display:flex;
-    align-items:center;
-    gap:14px;
-}
-
-.avatar{
-    width:55px;
-    height:55px;
-    border-radius:50%;
-    background:#7cc8ff;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    color:white;
-    font-size:28px;
-}
-
-.phone{
-    font-size:18px;
-    font-weight:bold;
-}
-
-/* LIST */
-
-.history-list{
-    margin-top:14px;
-    padding:0 14px;
-}
-
-.history-item{
-    background:white;
-    border-radius:16px;
-
-    padding:16px;
-    margin-bottom:14px;
-
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-
-.left{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-}
-
-.type{
-    font-size:17px;
-    font-weight:bold;
-}
-
-.time{
-    color:#888;
-    font-size:13px;
-}
-
-.right{
-    text-align:right;
-}
-
-.money{
-    font-size:18px;
-    font-weight:bold;
-}
-
-.deposit{
-    color:#00a650;
-}
-
-.withdraw{
-    color:#ff3b30;
-}
-
-.status{
-    margin-top:6px;
-    font-size:13px;
-    color:#666;
-}
-
-/* EMPTY */
-
-.empty{
-    text-align:center;
-    margin-top:80px;
-    color:#888;
-    font-size:18px;
-}
-
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+body{background:#f3f3f3;display:flex;justify-content:center;}
+.container{width:360px;min-height:100vh;background:#f5f5f5;padding-bottom:30px;}
+.header{height:70px;background:#d90000;color:white;display:flex;align-items:center;justify-content:center;position:sticky;top:0;}
+.back{position:absolute;left:18px;font-size:28px;cursor:pointer;}
+.title{font-size:24px;font-weight:bold;}
+.user-box{background:white;padding:18px;margin-top:12px;display:flex;align-items:center;gap:14px;}
+.avatar{width:55px;height:55px;border-radius:50%;background:#7cc8ff;display:flex;justify-content:center;align-items:center;color:white;font-size:28px;}
+.phone{font-size:18px;font-weight:bold;}
+.history-list{margin-top:14px;padding:0 14px;}
+.history-item{background:white;border-radius:16px;padding:16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.left{display:flex;flex-direction:column;gap:8px;}
+.type{font-size:17px;font-weight:bold;}
+.time{color:#888;font-size:13px;}
+.right{text-align:right;}
+.money{font-size:18px;font-weight:bold;}
+.deposit{color:#00a650;}
+.withdraw{color:#ff3b30;}
+.status{margin-top:6px;font-size:13px;}
+.pending{color:#f59e0b;font-weight:bold;}
+.success{color:#10b981;font-weight:bold;}
+.reject{color:#ef4444;font-weight:bold;}
+.empty{text-align:center;margin-top:80px;color:#888;font-size:18px;}
 </style>
 </head>
-
 <body>
 
 <div class="container">
 
     <!-- HEADER -->
-
     <div class="header">
-
-        <div class="back"
-        onclick="goBack()">
-
-            <i class="fa-solid fa-angle-left"></i>
-
-        </div>
-
-        <div class="title">
-            Lịch sử thanh toán
-        </div>
-
+        <div class="back" onclick="goBack()"><i class="fa-solid fa-angle-left"></i></div>
+        <div class="title">Lịch sử thanh toán</div>
     </div>
 
     <!-- USER -->
-
     <div class="user-box">
-
-        <div class="avatar">
-            <i class="fa-solid fa-user"></i>
-        </div>
-
-        <div class="phone"
-        id="userPhone">
-        </div>
-
+        <div class="avatar"><i class="fa-solid fa-user"></i></div>
+        <div class="phone" id="userPhone"></div>
     </div>
 
     <!-- LIST -->
-
-    <div class="history-list"
-    id="historyList">
-
-    </div>
+    <div class="history-list" id="historyList"></div>
 
 </div>
 
-<script>
+<script type="module">
+import { db, ref, onValue } from "./firebase-config.js";
 
-/* USER */
+// Lấy user hiện tại
+let currentUser = JSON.parse(localStorage.getItem("currentUser"));
+if(!currentUser) window.location.href = "index.html";
+document.getElementById("userPhone").innerText = "+84 " + currentUser.phone;
 
-let currentUser =
-JSON.parse(
-localStorage.getItem("currentUser")
-);
+// -------------------- LOAD HISTORY TỪ FIREBASE --------------------
+let historyListEl = document.getElementById("historyList");
 
-if(currentUser){
+function renderHistory(history){
+    historyListEl.innerHTML = "";
+    if(history.length===0){
+        historyListEl.innerHTML = `<div class="empty">Chưa có giao dịch nào</div>`;
+        return;
+    }
 
-    document.getElementById(
-        "userPhone"
-    ).innerText =
-    "+84 " + currentUser.phone;
+    // Hiển thị mới nhất lên trên
+    history.sort((a,b)=> (b.id||0)-(a.id||0));
 
+    history.forEach(item=>{
+        let typeClass = item.type==="Nạp tiền"?"deposit":"withdraw";
+        let icon = item.type==="Nạp tiền"?"+":"-";
+
+        let statusClass = item.status==="pending"?"pending":
+                          item.status==="Thành công"?"success":
+                          item.status==="Từ chối"?"reject":"";
+
+        historyListEl.innerHTML += `
+            <div class="history-item">
+                <div class="left">
+                    <div class="type">${item.type}</div>
+                    <div class="time">${item.time||"-"}</div>
+                </div>
+                <div class="right">
+                    <div class="money ${typeClass}">${icon}${Number(item.amount).toLocaleString("vi-VN")}₫</div>
+                    <div class="status ${statusClass}">${item.status||"pending"}</div>
+                </div>
+            </div>
+        `;
+    });
 }
 
-/* LOAD HISTORY */
+// -------------------- LẮNG NGHE DATABASE --------------------
+let allHistory = [];
 
-let allHistory =
-JSON.parse(
-localStorage.getItem("history")
-) || [];
-
-/* lọc đúng tài khoản */
-
-let userHistory =
-allHistory.filter(item =>
-item.phone ==
-currentUser.phone
-);
-
-let historyList =
-document.getElementById(
-    "historyList"
-);
-
-/* nếu trống */
-
-if(userHistory.length == 0){
-
-    historyList.innerHTML = `
-
-        <div class="empty">
-
-            Chưa có giao dịch nào
-
-        </div>
-
-    `;
-
+function updateHistory(){
+    // lọc chỉ lấy của user hiện tại
+    let userHistory = allHistory.filter(item=>item.phone===currentUser.phone);
+    renderHistory(userHistory);
 }
 
-/* render */
-
-userHistory.reverse().forEach(item => {
-
-    let typeClass =
-    item.type == "Nạp tiền"
-    ? "deposit"
-    : "withdraw";
-
-    let icon =
-    item.type == "Nạp tiền"
-    ? "+"
-    : "-";
-
-    historyList.innerHTML += `
-
-        <div class="history-item">
-
-            <div class="left">
-
-                <div class="type">
-                    ${item.type}
-                </div>
-
-                <div class="time">
-                    ${item.time}
-                </div>
-
-            </div>
-
-            <div class="right">
-
-                <div class="money ${typeClass}">
-                    ${icon}${Number(item.amount)
-                    .toLocaleString("vi-VN")}₫
-                </div>
-
-                <div class="status">
-    ${item.status || "Thành công"}
-</div>
-
-            </div>
-
-        </div>
-
-    `;
-
+// Lắng nghe deposits
+onValue(ref(db,"deposits"), snapshot=>{
+    snapshot.forEach(child=>{
+        let item = child.val();
+        item.key = child.key;
+        allHistory = allHistory.filter(i=>!(i.key===item.key && i.type==="Nạp tiền"));
+        allHistory.push(item);
+    });
+    updateHistory();
 });
 
-/* BACK */
+// Lắng nghe withdraws
+onValue(ref(db,"withdraws"), snapshot=>{
+    snapshot.forEach(child=>{
+        let item = child.val();
+        item.key = child.key;
+        allHistory = allHistory.filter(i=>!(i.key===item.key && i.type==="Rút tiền"));
+        allHistory.push(item);
+    });
+    updateHistory();
+});
 
-function goBack(){
-
-    window.location.href =
-    "cuatoi.html";
-
-}
-
+// -------------------- BACK --------------------
+function goBack(){ window.location.href = "cuatoi.html"; }
 </script>
 
 </body>
