@@ -82,8 +82,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
   </button>
   <button class="flex flex-col items-center text-gray-400" id="navCuaToi">
     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
     </svg>
     <span class="text-[10px]">Của tôi</span>
   </button>
@@ -92,56 +91,47 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
 </div>
 
 <script type="module">
-import { db, ref, onValue } from "./firebase-config.js";
+import { db, ref, onValue, push } from "./firebase-config.js";
 
-// Lấy user hiện tại
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href="index.html";
 if(!currentUser.baseMoney) currentUser.baseMoney = 10000;
 
-// ====== VIP PACKAGES ======
+// VIP PACKAGES
 const vipPackages = [
-{ id:1,name:"GOLD WT-VIP 1",rate:17,duration:80,daily:"8.500",total:"680.000",price:"50.000"},
-{ id:2,name:"GOLD WT-VIP 2",rate:17,duration:80,daily:"17.000",total:"1.360.000",price:"100.000"},
-{ id:3,name:"GOLD WT-VIP 3",rate:17,duration:80,daily:"34.000",total:"2.720.000",price:"200.000"},
-{ id:4,name:"GOLD WT-VIP 4",rate:17,duration:80,daily:"85.000",total:"6.800.000",price:"500.000"},
-{ id:5,name:"GOLD WT-VIP 5",rate:17,duration:80,daily:"136.000",total:"10.880.000",price:"800.000"},
-{ id:6,name:"GOLD WT-VIP 6",rate:17,duration:80,daily:"255.000",total:"20.400.000",price:"1.500.000"},
-{ id:7,name:"GOLD WT-VIP 7",rate:17,duration:80,daily:"510.000",total:"40.800.000",price:"3.000.000"},
-{ id:8,name:"GOLD WT-VIP 8",rate:17,duration:80,daily:"680.000",total:"54.400.000",price:"4.000.000"},
-{ id:9,name:"GOLD WT-VIP 9",rate:17,duration:80,daily:"850.000",total:"68.000.000",price:"5.000.000"},
-{ id:10,name:"GOLD WT-VIP 10",rate:17,duration:80,daily:"1.020.000",total:"81.600.000",price:"6.000.000"}
+  { id:1,name:"GOLD WT-VIP 1",rate:17,duration:80,daily:8500,price:50000 },
+  { id:2,name:"GOLD WT-VIP 2",rate:17,duration:80,daily:17000,price:100000 },
+  { id:3,name:"GOLD WT-VIP 3",rate:17,duration:80,daily:34000,price:200000 }
 ];
 
 const container = document.getElementById("vip-packages-container");
 
-// RENDER VIP
 vipPackages.forEach(pkg=>{
-const imageUrl="https://cdn.phototourl.com/free/2026-05-10-6aa5462c-adeb-4d28-88a4-faad3c335cb4.jpg";
-container.insertAdjacentHTML("beforeend",`
-<div class="bg-white rounded-xl p-3 shadow-sm flex gap-3">
-<div class="w-24 h-24 rounded-lg overflow-hidden">
-<img src="${imageUrl}" class="w-full h-full object-cover">
-</div>
-<div class="flex-1">
-<h3 class="text-xs font-bold mb-1">${pkg.name}</h3>
-<div class="text-[10px] text-gray-500 space-y-1">
-<div class="flex justify-between"><span>Lợi nhuận/ngày</span><span>${pkg.rate}%</span></div>
-<div class="flex justify-between"><span>Chu kỳ</span><span>${pkg.duration} ngày</span></div>
-<div class="flex justify-between"><span>Ngày</span><span>${pkg.daily} ₫</span></div>
-<div class="flex justify-between"><span>Tổng</span><span>${pkg.total} ₫</span></div>
-</div>
-<div class="flex justify-between items-center mt-2">
-<span class="text-orange-500 font-bold text-sm">${pkg.price} ₫</span>
-<button class="buy-btn bg-orange-500 text-white text-[10px] px-3 py-1 rounded-full"
-data-name="${pkg.name}" data-price="${pkg.price}">Mua ngay</button>
-</div>
-</div>
-</div>
-`);
+  const imageUrl="https://cdn.phototourl.com/free/2026-05-10-6aa5462c-adeb-4d28-88a4-faad3c335cb4.jpg";
+  container.insertAdjacentHTML("beforeend",`
+    <div class="bg-white rounded-xl p-3 shadow-sm flex gap-3">
+      <div class="w-24 h-24 rounded-lg overflow-hidden">
+        <img src="${imageUrl}" class="w-full h-full object-cover">
+      </div>
+      <div class="flex-1">
+        <h3 class="text-xs font-bold mb-1">${pkg.name}</h3>
+        <div class="text-[10px] text-gray-500 space-y-1">
+          <div class="flex justify-between"><span>Lợi nhuận/ngày</span><span>${pkg.rate}%</span></div>
+          <div class="flex justify-between"><span>Chu kỳ</span><span>${pkg.duration} ngày</span></div>
+          <div class="flex justify-between"><span>Ngày</span><span>${pkg.daily.toLocaleString()} ₫</span></div>
+          <div class="flex justify-between"><span>Giá</span><span>${pkg.price.toLocaleString()} ₫</span></div>
+        </div>
+        <div class="flex justify-between items-center mt-2">
+          <span class="text-orange-500 font-bold text-sm">${pkg.price.toLocaleString()} ₫</span>
+          <button class="buy-btn bg-orange-500 text-white text-[10px] px-3 py-1 rounded-full"
+            data-name="${pkg.name}" data-price="${pkg.price}">Mua ngay</button>
+        </div>
+      </div>
+    </div>
+  `);
 });
 
-// ====== ĐỒNG BỘ SỐ DƯ ======
+// ----------------- BALANCE -----------------
 let totalDeposit=0, totalWithdrawSuccess=0, totalWithdrawPending=0;
 
 function updateBalanceUI(){
@@ -149,7 +139,7 @@ function updateBalanceUI(){
   document.getElementById("balance").innerText = "₫"+Number(available).toLocaleString("vi-VN");
 }
 
-// Lắng nghe deposits
+// Listen deposits
 onValue(ref(db,"deposits"),snap=>{
   totalDeposit=0;
   snap.forEach(d=>{
@@ -159,7 +149,7 @@ onValue(ref(db,"deposits"),snap=>{
   updateBalanceUI();
 });
 
-// Lắng nghe withdraws
+// Listen withdraws
 onValue(ref(db,"withdraws"),snap=>{
   totalWithdrawSuccess=0; totalWithdrawPending=0;
   snap.forEach(w=>{
@@ -172,29 +162,47 @@ onValue(ref(db,"withdraws"),snap=>{
   updateBalanceUI();
 });
 
-// ====== MUA VIP ======
+// ----------------- BUY VIP -----------------
 document.addEventListener("click",e=>{
   if(e.target.classList.contains("buy-btn")){
     let name=e.target.dataset.name;
-    let price=Number(e.target.dataset.price.replace(/\./g,""));
+    let price=Number(e.target.dataset.price);
     const available=(currentUser.baseMoney||10000)+totalDeposit-totalWithdrawSuccess-totalWithdrawPending;
     if(price>available){
       alert("Số dư không đủ!");
       return;
     }
 
-    // Cập nhật users
-    let users=JSON.parse(localStorage.getItem("users"))||[];
-    let user=users.find(u=>u.phone===currentUser.phone);
-    if(user) user.money=(user.money||0)-price;
-    localStorage.setItem("users",JSON.stringify(users));
-    updateBalanceUI();
+    // Trừ tiền bằng cách push withdraw
+    push(ref(db,"withdraws"),{
+      id: Date.now(),
+      phone: currentUser.phone,
+      username: currentUser.username||"",
+      type:"Rút tiền",
+      amount: price,
+      bank:"",
+      bankOwner:"",
+      bankNumber:"",
+      time:new Date().toLocaleString("vi-VN"),
+      status:"Thành công"
+    });
+
+    // Thêm VIP vào vipHistory
+    let vipHistory = JSON.parse(localStorage.getItem("vipHistory"))||[];
+    vipHistory.push({
+      phone: currentUser.phone,
+      name: name,
+      price: price,
+      startTime: Date.now(),
+      dailyProfit: vipPackages.find(p=>p.name===name).daily
+    });
+    localStorage.setItem("vipHistory",JSON.stringify(vipHistory));
 
     alert("Mua thành công "+name);
   }
 });
 
-// ====== NAVIGATION ======
+// NAVIGATION
 document.getElementById("logoHome").onclick = ()=>goHome();
 document.getElementById("btnDeposit").onclick = ()=>goDeposit();
 document.getElementById("btnWithdraw").onclick = ()=>goWithdraw();
@@ -209,6 +217,10 @@ function goIntro(){ window.location.href="intro.html"; }
 function goCuaToi(){ window.location.href="cuatoi.html"; }
 function goDeposit(){ window.location.href="deposit.html"; }
 function goWithdraw(){ window.location.href="withdraw.html"; }
+
+// INIT
+updateBalanceUI();
+
 </script>
 
 </body>
