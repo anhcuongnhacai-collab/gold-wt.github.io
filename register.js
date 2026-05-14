@@ -1,6 +1,5 @@
-let captchaText = "";
-
-/* ================= CAPTCHA ================= */
+  let captchaText = "";
+ 
 function createCaptcha() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   captchaText = "";
@@ -12,8 +11,7 @@ function createCaptcha() {
 }
 
 window.onload = createCaptcha;
-
-/* ================= AUTO REF ================= */
+ 
 function getRefFromURL(){
   const params = new URLSearchParams(window.location.search);
   return params.get("ref");
@@ -27,7 +25,7 @@ window.addEventListener("load", function(){
   }
 });
 
-/* ================= CHECK CHỮ + SỐ ================= */
+
 function onlyEnglish(text) {
   return /^[A-Za-z0-9]+$/.test(text);
 }
