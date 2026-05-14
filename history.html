@@ -4,25 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lịch sử thanh toán</title>
-
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
-
 <style>
 *{ margin:0; padding:0; box-sizing:border-box; font-family:Arial; }
 body{ background:#f3f3f3; display:flex; justify-content:center; }
 .container{ width:360px; min-height:100vh; background:#f5f5f5; padding-bottom:30px; }
-
-/* HEADER */
 .header{ height:70px; background:#d90000; color:white; display:flex; align-items:center; justify-content:center; position:sticky; top:0; }
 .back{ position:absolute; left:18px; font-size:28px; cursor:pointer; }
 .title{ font-size:24px; font-weight:bold; }
-
-/* USER */
 .user-box{ background:white; padding:18px; margin-top:12px; display:flex; align-items:center; gap:14px; }
 .avatar{ width:55px; height:55px; border-radius:50%; background:#7cc8ff; display:flex; justify-content:center; align-items:center; color:white; font-size:28px; }
 .phone{ font-size:18px; font-weight:bold; }
-
-/* LIST */
 .history-list{ margin-top:14px; padding:0 14px; }
 .history-item{ background:white; border-radius:16px; padding:16px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
 .left{ display:flex; flex-direction:column; gap:8px; }
@@ -33,30 +25,20 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 .deposit{ color:#00a650; }
 .withdraw{ color:#ff3b30; }
 .status{ margin-top:6px; font-size:13px; color:#666; }
-
-/* EMPTY */
 .empty{ text-align:center; margin-top:80px; color:#888; font-size:18px; }
 </style>
 </head>
-
 <body>
 <div class="container">
-
-    <!-- HEADER -->
     <div class="header">
         <div class="back" onclick="goBack()"><i class="fa-solid fa-angle-left"></i></div>
         <div class="title">Lịch sử thanh toán</div>
     </div>
-
-    <!-- USER -->
     <div class="user-box">
         <div class="avatar"><i class="fa-solid fa-user"></i></div>
         <div class="phone" id="userPhone"></div>
     </div>
-
-    <!-- LIST -->
     <div class="history-list" id="historyList"></div>
-
 </div>
 
 <script type="module">
@@ -64,7 +46,6 @@ import { db, ref, onValue } from "./firebase-config.js";
 
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href="index.html";
-
 document.getElementById("userPhone").innerText = "+84 " + currentUser.phone;
 
 let history = [];
@@ -95,7 +76,6 @@ onValue(ref(db, "withdraws"), snapshot => {
     renderHistory();
 });
 
-// Render history, mới nhất lên đầu
 function renderHistory(){
     const list = document.getElementById("historyList");
     list.innerHTML = "";
@@ -105,14 +85,15 @@ function renderHistory(){
         return;
     }
 
-    // Sắp xếp thời gian mới nhất lên đầu
+    // Chuyển time sang Date để sort mới nhất lên đầu
     history.sort((a,b)=>{
-        const parseTime = t => {
+        function parseTime(t){
             if(!t) return 0;
-            let parts = t.split(','); // "dd/mm/yyyy, hh:mm:ss"
-            let datePart = parts[0].split('/').reverse().join('-');
-            let timePart = parts[1]||'00:00:00';
-            return new Date(datePart + ' ' + timePart).getTime();
+            const parts = t.split(',');
+            const dateParts = parts[0].split('/');
+            const timePart = parts[1] ? parts[1].trim() : "00:00:00";
+            const iso = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${timePart}`;
+            return new Date(iso).getTime();
         }
         return parseTime(b.time) - parseTime(a.time);
     });
