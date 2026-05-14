@@ -4,11 +4,9 @@ let captchaText = "";
 function createCaptcha() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   captchaText = "";
-
   for (let i = 0; i < 6; i++) {
     captchaText += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-
   const cap = document.getElementById("captcha");
   if (cap) cap.innerText = captchaText;
 }
@@ -23,7 +21,6 @@ function getRefFromURL(){
 
 window.addEventListener("load", function(){
   createCaptcha();
-
   let ref = getRefFromURL();
   if(ref && document.getElementById("refCodeInput")){
     document.getElementById("refCodeInput").value = ref;
@@ -37,7 +34,6 @@ function onlyEnglish(text) {
 
 /* ================= REGISTER ================= */
 function register() {
-
   let users = JSON.parse(localStorage.getItem("users")) || [];
 
   let username = document.getElementById("registerUser").value.trim();
@@ -47,51 +43,43 @@ function register() {
   let captchaInput = document.getElementById("captchaInput").value.trim();
   let refInput = document.getElementById("refCodeInput")?.value.trim() || "";
 
-  /* ===== CHECK RỖNG ===== */
   if (!username || !phone || !password || !confirmPass) {
     alert("Vui lòng nhập đầy đủ thông tin!");
     return;
   }
 
-  /* ===== CHECK CHỮ ===== */
   if (!onlyEnglish(username) || !onlyEnglish(password)) {
     alert("Chỉ dùng chữ và số A-Z / 0-9");
     return;
   }
 
-  /* ===== CHECK PASSWORD ===== */
   if (password !== confirmPass) {
     alert("Mật khẩu không khớp!");
     return;
   }
 
-  /* ===== CHECK CAPTCHA ===== */
   if (captchaInput !== captchaText) {
     alert("Sai mã xác nhận!");
     createCaptcha();
     return;
   }
 
-  /* ===== CHECK TRÙNG SĐT ===== */
-  let exist = users.find(u => u.phone === phone);
-  if (exist) {
+  if(users.find(u => u.phone === phone)){
     alert("Số điện thoại đã tồn tại!");
     return;
   }
 
-  /* ===== TẠO USER ===== */
   let myRef = phone + Math.floor(Math.random() * 999);
 
   let newUser = {
-    username: username,      // ⚡ sửa ở đây để admin hiển thị đúng tên
+    username: username,    // ✅ lưu để admin đồng bộ
+    name: username,
     phone: phone,
     password: password,
-
-    money: 10000,     
+    money: 10000,
     baseMoney: 10000,
-    
-    vip: 0,           
-    myRef: myRef,    
+    vip: 0,
+    myRef: myRef,
     refBy: refInput || null,
     refCount: 0,
     totalCommission: 0
@@ -107,15 +95,12 @@ function register() {
 
 /* ================= VIP + REF SYSTEM ================= */
 function upgradeVIP(phone) {
-
   let users = JSON.parse(localStorage.getItem("users")) || [];
-
   let user = users.find(u => u.phone === phone);
   if (!user) return;
 
   user.vip = 1;
 
-  /* ===== THƯỞNG NGƯỜI GIỚI THIỆU ===== */
   if (user.refBy) {
     let refUser = users.find(u => u.myRef === user.refBy);
     if (refUser && user.vip === 1) {
@@ -127,6 +112,5 @@ function upgradeVIP(phone) {
   localStorage.setItem("users", JSON.stringify(users));
 }
 
-window.createCaptcha = createCaptcha;
 window.register = register;
 window.upgradeVIP = upgradeVIP;
