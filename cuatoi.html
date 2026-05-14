@@ -8,7 +8,7 @@
 <style>
 *{ margin:0; padding:0; box-sizing:border-box; font-family:Arial; }
 body{ background:#f3f3f3; display:flex; justify-content:center; }
-.container{ width:100%; max-width:420px; min-height:100vh; background:#f3f3f3; padding:20px 16px 100px; position:relative; }
+.container{ width:100%; max-width:420px; min-height:100vh; background:#f3f4f6; padding:20px 16px 100px; position:relative; }
 /* HEADER */
 .title{ text-align:center; font-size:30px; font-weight:bold; margin-top:10px; }
 .top-icon{ position:absolute; right:20px; top:25px; font-size:22px; cursor:pointer; }
@@ -85,14 +85,13 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 <script type="module">
 import { db, ref, onValue } from "./firebase-config.js";
 
-// Lấy user hiện tại
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
-if(!currentUser) window.location.href = "index.html";
+if(!currentUser) window.location.href="index.html";
 if(!currentUser.baseMoney) currentUser.baseMoney = 10000;
 
 document.getElementById("userPhone").innerText = "+84 " + currentUser.phone;
 
-// ----------------- HÀM CHUYỂN TRANG -----------------
+// NAVIGATION
 function goHome(){ window.location.href="home.html"; }
 function goProfilePage(){ window.location.href="hoso.html"; }
 function goIntro(){ window.location.href="intro.html"; }
@@ -108,42 +107,59 @@ window.goWithdraw=goWithdraw; window.goDeposit=goDeposit; window.goBank=goBank;
 window.goSupport=goSupport; window.goGroup=goGroup; window.goHistory=goHistory;
 document.getElementById("logoutBtn").onclick = logout;
 
-// ----------------- LẮNG NGHE DATABASE -----------------
-let totalDeposit = 0;
-let totalWithdrawSuccess = 0;
-let totalWithdrawPending = 0;
+// ================= LẮNG NGHE DATABASE & VIP =================
+let totalDeposit=0, totalWithdrawSuccess=0, totalWithdrawPending=0;
+let vipHistory = JSON.parse(localStorage.getItem("vipHistory")) || [];
+let users = JSON.parse(localStorage.getItem("users")) || [];
+let user = users.find(u=>u.phone===currentUser.phone);
 
-// Hàm tính số dư và cập nhật đồng bộ
 function recalcBalance(){
-    let available = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
-    // Đồng bộ cả balance và withdraw
-    document.getElementById("balance").innerText = "₫" + available.toLocaleString("vi-VN");
-    document.getElementById("withdraw").innerText = "₫" + available.toLocaleString("vi-VN");
+    // Tính tổng deposit và withdraw
+    onValue(ref(db,"deposits"), snap=>{
+        totalDeposit=0;
+        snap.forEach(s=>{
+            let v=s.val();
+            if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit+=Number(v.amount);
+        });
+
+        onValue(ref(db,"withdraws"), wsnap=>{
+            totalWithdrawSuccess=0; totalWithdrawPending=0;
+            wsnap.forEach(w=>{
+                let val=w.val();
+                if(val.phone===currentUser.phone){
+                    if(val.status==="Thành công") totalWithdrawSuccess+=Number(val.amount);
+                    else if(val.status==="pending") totalWithdrawPending+=Number(val.amount);
+                }
+            });
+
+            // Tính số dư chính xác
+            let balance = (user.baseMoney||0) + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
+
+            // Cộng lợi nhuận 1 ngày VIP nếu đủ 24h
+            let now = Date.now();
+            let dailyProfitTotal = 0;
+            vipHistory.filter(v=>v.phone===currentUser.phone).forEach(v=>{
+                if(!v.lastClaim) v.lastClaim = v.startTime;
+                let diff = now - v.lastClaim;
+                if(diff>=24*60*60*1000){
+                    let days = Math.floor(diff/(24*60*60*1000));
+                    user.baseMoney += v.dailyProfit*days;
+                    v.lastClaim += days*24*60*60*1000;
+                }
+                dailyProfitTotal += v.dailyProfit;
+            });
+
+            document.getElementById("balance").innerText = "₫" + balance.toLocaleString("vi-VN");
+            document.getElementById("withdraw").innerText = "₫" + balance.toLocaleString("vi-VN");
+            localStorage.setItem("users", JSON.stringify(users));
+            localStorage.setItem("vipHistory", JSON.stringify(vipHistory));
+        });
+    });
 }
 
-// Nghe nạp tiền
-onValue(ref(db,"deposits"), snap=>{
-    totalDeposit=0;
-    snap.forEach(s=>{
-        let v=s.val();
-        if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit+=Number(v.amount);
-    });
-    recalcBalance();
-});
-
-// Nghe rút tiền
-onValue(ref(db,"withdraws"), snap=>{
-    totalWithdrawSuccess=0;
-    totalWithdrawPending=0;
-    snap.forEach(s=>{
-        let v=s.val();
-        if(v.phone===currentUser.phone){
-            if(v.status==="Thành công") totalWithdrawSuccess+=Number(v.amount);
-            else if(v.status==="pending") totalWithdrawPending+=Number(v.amount);
-        }
-    });
-    recalcBalance();
-});
+// INIT
+recalcBalance();
+setInterval(recalcBalance,60000);
 </script>
 </body>
 </html>
