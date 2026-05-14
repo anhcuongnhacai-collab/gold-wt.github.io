@@ -15,7 +15,7 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 /* PROFILE */
 .profile{ text-align:center; margin-top:20px; }
 .avatar{ width:85px; height:85px; border-radius:50%; background:#6bc1ff; margin:auto; display:flex; justify-content:center; align-items:center; }
-.avatar i{ font-size:45px; color:white; }
+.avatar img{ width:100%; height:100%; border-radius:50%; object-fit:cover; }
 .user-id{ margin-top:10px; color:#777; font-size:14px; }
 /* BALANCE */
 .balance-box{ display:flex; gap:10px; margin-top:20px; }
@@ -47,7 +47,7 @@ body{ background:#f3f3f3; display:flex; justify-content:center; }
 <!-- PROFILE -->
 <div class="profile">
 <div class="avatar">
-<img src="images/logo.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+<img src="images/logo.png">
 </div>
 <div class="user-id" id="userPhone"></div>
 <div class="balance-box">
@@ -88,8 +88,6 @@ import { db, ref, onValue } from "./firebase-config.js";
 // Lấy user hiện tại
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href = "index.html";
-
-// Mặc định baseMoney nếu user mới
 if(!currentUser.baseMoney) currentUser.baseMoney = 10000;
 
 document.getElementById("userPhone").innerText = "+84 " + currentUser.phone;
@@ -105,62 +103,47 @@ function goSupport(){ window.location.href="support.html"; }
 function goGroup(){ window.open("https://t.me/GOLDWT1","_blank"); }
 function goHistory(){ window.location.href="history.html"; }
 function logout(){ localStorage.removeItem("currentUser"); window.location.href="index.html"; }
-
-// Gán ra window
-window.goHome = goHome;
-window.goProfilePage = goProfilePage;
-window.goIntro = goIntro;
-window.goWithdraw = goWithdraw;
-window.goDeposit = goDeposit;
-window.goBank = goBank;
-window.goSupport = goSupport;
-window.goGroup = goGroup;
-window.goHistory = goHistory;
-window.logout = logout;
+window.goHome=goHome; window.goProfilePage=goProfilePage; window.goIntro=goIntro;
+window.goWithdraw=goWithdraw; window.goDeposit=goDeposit; window.goBank=goBank;
+window.goSupport=goSupport; window.goGroup=goGroup; window.goHistory=goHistory;
 document.getElementById("logoutBtn").onclick = logout;
 
-// ----------------- HÀM CẬP NHẬT SỐ DƯ -----------------
-function updateBalanceUI(balance, available){
-    document.getElementById("balance").innerText = "₫"+Number(balance).toLocaleString("vi-VN");
-    document.getElementById("withdraw").innerText = "₫"+Number(available).toLocaleString("vi-VN");
-}
-
-// Biến tổng
+// ----------------- LẮNG NGHE DATABASE -----------------
 let totalDeposit = 0;
 let totalWithdrawSuccess = 0;
 let totalWithdrawPending = 0;
 
-// ----------------- LẮNG NGHE DATABASE -----------------
+// Hàm tính số dư và cập nhật đồng bộ
 function recalcBalance(){
-    let balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess;
-    let available = balance - totalWithdrawPending; // số có thể rút thực tế
-    updateBalanceUI(balance, available);
+    let available = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
+    // Đồng bộ cả balance và withdraw
+    document.getElementById("balance").innerText = "₫" + available.toLocaleString("vi-VN");
+    document.getElementById("withdraw").innerText = "₫" + available.toLocaleString("vi-VN");
 }
 
-// Lắng nghe nạp tiền
-onValue(ref(db, "deposits"), snap => {
-    totalDeposit = 0;
+// Nghe nạp tiền
+onValue(ref(db,"deposits"), snap=>{
+    totalDeposit=0;
     snap.forEach(s=>{
-        let v = s.val();
-        if(v.phone === currentUser.phone && v.status === "Thành công") totalDeposit += Number(v.amount);
+        let v=s.val();
+        if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit+=Number(v.amount);
     });
     recalcBalance();
 });
 
-// Lắng nghe rút tiền
-onValue(ref(db, "withdraws"), snap => {
-    totalWithdrawSuccess = 0;
-    totalWithdrawPending = 0;
+// Nghe rút tiền
+onValue(ref(db,"withdraws"), snap=>{
+    totalWithdrawSuccess=0;
+    totalWithdrawPending=0;
     snap.forEach(s=>{
-        let v = s.val();
-        if(v.phone === currentUser.phone){
-            if(v.status === "Thành công") totalWithdrawSuccess += Number(v.amount);
-            else if(v.status === "pending") totalWithdrawPending += Number(v.amount);
+        let v=s.val();
+        if(v.phone===currentUser.phone){
+            if(v.status==="Thành công") totalWithdrawSuccess+=Number(v.amount);
+            else if(v.status==="pending") totalWithdrawPending+=Number(v.amount);
         }
     });
     recalcBalance();
 });
 </script>
-
 </body>
 </html>
