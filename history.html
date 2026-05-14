@@ -24,20 +24,16 @@ body{background:#f3f3f3;display:flex;justify-content:center;}
 .money{font-size:18px;font-weight:bold;}
 .deposit{color:#00a650;}
 .withdraw{color:#ff3b30;}
-.status{margin-top:6px;font-size:13px;}
-.pending{color:#f59e0b;font-weight:bold;}
-.success{color:#10b981;font-weight:bold;}
-.reject{color:#ef4444;font-weight:bold;}
+.status{margin-top:6px;font-size:13px;color:#666;}
 .empty{text-align:center;margin-top:80px;color:#888;font-size:18px;}
 </style>
 </head>
 <body>
-
 <div class="container">
 
     <!-- HEADER -->
     <div class="header">
-        <div class="back" onclick="goBack()"><i class="fa-solid fa-angle-left"></i></div>
+        <div class="back"><i class="fa-solid fa-angle-left"></i></div>
         <div class="title">Lịch sử thanh toán</div>
     </div>
 
@@ -55,81 +51,85 @@ body{background:#f3f3f3;display:flex;justify-content:center;}
 <script type="module">
 import { db, ref, onValue } from "./firebase-config.js";
 
-// Lấy user hiện tại
+// -------------------- LẤY USER --------------------
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
-if(!currentUser) window.location.href = "index.html";
+if(!currentUser) window.location.href="index.html";
 document.getElementById("userPhone").innerText = "+84 " + currentUser.phone;
 
-// -------------------- LOAD HISTORY TỪ FIREBASE --------------------
-let historyListEl = document.getElementById("historyList");
+// -------------------- BACK BUTTON --------------------
+const backBtn = document.querySelector(".back");
+if(backBtn){
+    backBtn.addEventListener("click", ()=>{
+        window.location.href = "cuatoi.html";
+    });
+}
 
-function renderHistory(history){
-    historyListEl.innerHTML = "";
-    if(history.length===0){
-        historyListEl.innerHTML = `<div class="empty">Chưa có giao dịch nào</div>`;
+// -------------------- LẤY LỊCH SỬ --------------------
+let history = [];
+
+// Lắng nghe nạp tiền
+onValue(ref(db,"deposits"), snap => {
+    snap.forEach(s => {
+        let item = s.val();
+        if(item.phone === currentUser.phone){
+            item.type = "Nạp tiền";
+            item.status = item.status || "Thành công";
+            history.push(item);
+        }
+    });
+    renderHistory();
+});
+
+// Lắng nghe rút tiền
+onValue(ref(db,"withdraws"), snap => {
+    snap.forEach(s => {
+        let item = s.val();
+        if(item.phone === currentUser.phone){
+            item.type = "Rút tiền";
+            item.status = item.status || "pending";
+            history.push(item);
+        }
+    });
+    renderHistory();
+});
+
+// -------------------- FORMAT TIỀN --------------------
+function formatMoney(value){
+    return Number(value||0).toLocaleString("vi-VN") + "₫";
+}
+
+// -------------------- RENDER HISTORY --------------------
+function renderHistory(){
+    const list = document.getElementById("historyList");
+    list.innerHTML = "";
+
+    if(history.length === 0){
+        list.innerHTML = `<div class="empty">Chưa có giao dịch nào</div>`;
         return;
     }
 
-    // Hiển thị mới nhất lên trên
-    history.sort((a,b)=> (b.id||0)-(a.id||0));
+    // Sắp xếp mới nhất lên trên
+    history.sort((a,b) => (b.time || 0) - (a.time || 0));
 
-    history.forEach(item=>{
-        let typeClass = item.type==="Nạp tiền"?"deposit":"withdraw";
-        let icon = item.type==="Nạp tiền"?"+":"-";
+    history.forEach(item => {
+        let typeClass = item.type === "Nạp tiền" ? "deposit" : "withdraw";
+        let icon = item.type === "Nạp tiền" ? "+" : "-";
+        let status = item.status || "pending";
 
-        let statusClass = item.status==="pending"?"pending":
-                          item.status==="Thành công"?"success":
-                          item.status==="Từ chối"?"reject":"";
-
-        historyListEl.innerHTML += `
+        list.innerHTML += `
             <div class="history-item">
                 <div class="left">
                     <div class="type">${item.type}</div>
-                    <div class="time">${item.time||"-"}</div>
+                    <div class="time">${item.time || "-"}</div>
                 </div>
                 <div class="right">
-                    <div class="money ${typeClass}">${icon}${Number(item.amount).toLocaleString("vi-VN")}₫</div>
-                    <div class="status ${statusClass}">${item.status||"pending"}</div>
+                    <div class="money ${typeClass}">${icon}${formatMoney(item.amount)}</div>
+                    <div class="status">${status}</div>
                 </div>
             </div>
         `;
     });
 }
-
-// -------------------- LẮNG NGHE DATABASE --------------------
-let allHistory = [];
-
-function updateHistory(){
-    // lọc chỉ lấy của user hiện tại
-    let userHistory = allHistory.filter(item=>item.phone===currentUser.phone);
-    renderHistory(userHistory);
-}
-
-// Lắng nghe deposits
-onValue(ref(db,"deposits"), snapshot=>{
-    snapshot.forEach(child=>{
-        let item = child.val();
-        item.key = child.key;
-        allHistory = allHistory.filter(i=>!(i.key===item.key && i.type==="Nạp tiền"));
-        allHistory.push(item);
-    });
-    updateHistory();
-});
-
-// Lắng nghe withdraws
-onValue(ref(db,"withdraws"), snapshot=>{
-    snapshot.forEach(child=>{
-        let item = child.val();
-        item.key = child.key;
-        allHistory = allHistory.filter(i=>!(i.key===item.key && i.type==="Rút tiền"));
-        allHistory.push(item);
-    });
-    updateHistory();
-});
-
-// -------------------- BACK --------------------
-function goBack(){ window.location.href = "cuatoi.html"; }
 </script>
-
 </body>
 </html>
