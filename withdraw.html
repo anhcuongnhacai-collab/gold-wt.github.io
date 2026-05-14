@@ -6,22 +6,22 @@
 <title>Rút tiền</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
-body{background:#f5f5f5;display:flex;justify-content:center;}
-.container{width:100%;max-width:420px;min-height:100vh;background:#f5f5f5;}
-.header{width:100%;height:70px;background:white;display:flex;justify-content:center;align-items:center;font-size:28px;font-weight:bold;position:sticky;top:0;box-shadow:0 2px 10px rgba(0,0,0,0.05);position:relative;}
-.back{position:absolute;left:20px;font-size:24px;cursor:pointer;}
-.card{background:white;margin:20px;border-radius:20px;padding:25px;box-shadow:0 5px 15px rgba(0,0,0,0.05);}
-.title{font-size:18px;color:#777;margin-bottom:10px;}
-.money{font-size:38px;font-weight:bold;color:#ff7a00;margin-bottom:25px;}
-.input-box{width:100%;height:60px;border:2px solid #eee;border-radius:15px;padding:0 15px;margin-bottom:20px;background:#fafafa;}
-.input-box input,.input-box select{width:100%;height:100%;border:none;outline:none;background:none;font-size:18px;}
-.info-box{width:100%;background:#fafafa;border-radius:15px;padding:15px;margin-bottom:20px;border:2px dashed #ffb067;}
-.info-line{margin-bottom:10px;font-size:15px;}
-.note{font-size:14px;color:#888;line-height:1.6;}
-.btn{width:calc(100% - 40px);height:60px;border:none;border-radius:15px;margin:0 20px;background:linear-gradient(to right,#ff7a00,#ff9d00);color:white;font-size:22px;font-weight:bold;cursor:pointer;}
-.btn:disabled{opacity:0.5;cursor:not-allowed;}
-.btn:hover:not(:disabled){opacity:0.9;}
+* { margin:0; padding:0; box-sizing:border-box; font-family:Arial; }
+body { background:#f5f5f5; display:flex; justify-content:center; }
+.container { width:100%; max-width:420px; min-height:100vh; background:#f5f5f5; }
+.header { width:100%; height:70px; background:white; display:flex; justify-content:center; align-items:center; font-size:28px; font-weight:bold; position:sticky; top:0; box-shadow:0 2px 10px rgba(0,0,0,0.05); position:relative; }
+.back { position:absolute; left:20px; font-size:24px; cursor:pointer; }
+.card { background:white; margin:20px; border-radius:20px; padding:25px; box-shadow:0 5px 15px rgba(0,0,0,0.05); }
+.title { font-size:18px; color:#777; margin-bottom:10px; }
+.money { font-size:38px; font-weight:bold; color:#ff7a00; margin-bottom:25px; }
+.input-box { width:100%; height:60px; border:2px solid #eee; border-radius:15px; padding:0 15px; margin-bottom:20px; background:#fafafa; }
+.input-box input, .input-box select { width:100%; height:100%; border:none; outline:none; background:none; font-size:18px; }
+.info-box { width:100%; background:#fafafa; border-radius:15px; padding:15px; margin-bottom:20px; border:2px dashed #ffb067; display:none; }
+.info-line { margin-bottom:10px; font-size:15px; }
+.note { font-size:14px; color:#888; line-height:1.6; }
+.btn { width:calc(100% - 40px); height:60px; border:none; border-radius:15px; margin:0 20px; background:linear-gradient(to right,#ff7a00,#ff9d00); color:white; font-size:22px; font-weight:bold; cursor:pointer; }
+.btn:disabled { opacity:0.5; cursor:not-allowed; }
+.btn:hover:not(:disabled) { opacity:0.9; }
 </style>
 </head>
 <body>
@@ -41,7 +41,7 @@ body{background:#f5f5f5;display:flex;justify-content:center;}
       </select>
     </div>
 
-    <div class="info-box" id="bankInfo" style="display:none;">
+    <div class="info-box" id="bankInfo">
       <div class="info-line"><b>Chủ tài khoản:</b> <span id="owner"></span></div>
       <div class="info-line"><b>Số tài khoản:</b> <span id="number"></span></div>
     </div>
@@ -62,10 +62,12 @@ body{background:#f5f5f5;display:flex;justify-content:center;}
 <script type="module">
 import { db, ref, push, onValue } from "./firebase-config.js";
 
+// Lấy thông tin user
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href="index.html";
 if(!currentUser.baseMoney) currentUser.baseMoney = 10000;
 
+// Bank info
 const bankData = JSON.parse(localStorage.getItem("bankInfo"));
 const bankSelect = document.getElementById("bankSelect");
 const bankInfoBox = document.getElementById("bankInfo");
@@ -79,7 +81,7 @@ let totalDeposit = 0;
 let totalWithdrawSuccess = 0;
 let totalWithdrawPending = 0;
 
-// --- LOAD NGÂN HÀNG ---
+// Load ngân hàng
 if(bankData){
   const option = document.createElement("option");
   option.value = bankData.bank;
@@ -89,7 +91,7 @@ if(bankData){
 
 function showBankInfo(){
   const selected = bankSelect.value;
-  if(bankData && selected===bankData.bank){
+  if(bankData && selected === bankData.bank){
     bankInfoBox.style.display = "block";
     ownerSpan.innerText = bankData.name;
     numberSpan.innerText = bankData.number;
@@ -97,24 +99,22 @@ function showBankInfo(){
 }
 bankSelect.addEventListener("change", showBankInfo);
 
-// --- QUAY LẠI ---
+// Quay lại
 document.querySelector(".back").addEventListener("click",()=>window.location.href="cuatoi.html");
 
-// --- CẬP NHẬT SỐ DƯ ---
+// Cập nhật số dư
 function updateBalanceUI(){
   const balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
   moneyDisplay.innerText = "₫" + balance.toLocaleString("vi-VN");
-
-  // nếu còn lệnh pending → khóa nút rút tiền
-  withdrawBtn.disabled = totalWithdrawPending>0;
+  withdrawBtn.disabled = totalWithdrawPending > 0 || balance < 50000;
 }
 
-// --- LẮNG NGHE DATABASE ---
+// Lắng nghe database
 onValue(ref(db,"deposits"), snap=>{
   totalDeposit=0;
   snap.forEach(s=>{
     const v=s.val();
-    if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit+=Number(v.amount);
+    if(v.phone === currentUser.phone && v.status === "Thành công") totalDeposit += Number(v.amount);
   });
   updateBalanceUI();
 });
@@ -124,7 +124,7 @@ onValue(ref(db,"withdraws"), snap=>{
   totalWithdrawPending=0;
   snap.forEach(s=>{
     const v=s.val();
-    if(v.phone===currentUser.phone){
+    if(v.phone === currentUser.phone){
       if(v.status==="Thành công") totalWithdrawSuccess+=Number(v.amount);
       else if(v.status==="pending") totalWithdrawPending+=Number(v.amount);
     }
@@ -132,7 +132,7 @@ onValue(ref(db,"withdraws"), snap=>{
   updateBalanceUI();
 });
 
-// --- RÚT TIỀN ---
+// Rút tiền
 withdrawBtn.addEventListener("click",()=>{
   const amount = Number(withdrawInput.value);
   const selectedBank = bankSelect.value;
@@ -146,21 +146,20 @@ withdrawBtn.addEventListener("click",()=>{
   push(ref(db,"withdraws"),{
     id: Date.now(),
     phone: currentUser.phone,
-    username: currentUser.username||"",
+    username: currentUser.username || "",
     type: "Rút tiền",
     amount: amount,
-    bank: bankData?.bank||"",
-    bankOwner: bankData?.name||"",
-    bankNumber: bankData?.number||"",
+    bank: bankData?.bank || "",
+    bankOwner: bankData?.name || "",
+    bankNumber: bankData?.number || "",
     time: new Date().toLocaleString("vi-VN"),
     status: "pending"
   });
 
-  // Cập nhật pending để trừ ngay số dư
   totalWithdrawPending += amount;
   updateBalanceUI();
 
-  alert("Yêu cầu rút tiền đã được gửi.\nChờ admin duyệt.");
+  alert("Yêu cầu rút tiền đã gửi.\nChờ admin duyệt.");
 });
 </script>
 </body>
