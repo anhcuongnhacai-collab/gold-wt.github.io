@@ -84,6 +84,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
 <script type="module">
 import { db, ref, onValue } from "./firebase-config.js";
 
+// Lấy user hiện tại
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href="login.html";
 
@@ -97,18 +98,15 @@ let totalDeposit = 0;
 let totalWithdrawSuccess = 0;
 let totalWithdrawPending = 0;
 
-// Hàm cập nhật số dư giống cuatoi.html
+// Cập nhật số dư chính xác như cuatoi.html
 function updateBalance(){
-    // Tổng deposit
     onValue(ref(db,"deposits"), snapshot=>{
         totalDeposit=0;
         snapshot.forEach(s=>{
             let v=s.val();
-            if(v.phone===currentUser.phone && v.status==="Thành công")
-                totalDeposit += Number(v.amount);
+            if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit += Number(v.amount);
         });
 
-        // Tổng withdraw
         onValue(ref(db,"withdraws"), snap=>{
             totalWithdrawSuccess=0;
             totalWithdrawPending=0;
@@ -120,11 +118,10 @@ function updateBalance(){
                 }
             });
 
-            // Tính tổng số dư chính xác, **không cộng VIP**
             let totalBalance = (user.baseMoney||0) + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
             document.getElementById("balance2").innerText = totalBalance.toLocaleString("vi-VN")+"₫";
 
-            // VIP profit hiển thị riêng ở "Có thể rút"
+            // VIP profit
             let now=Date.now();
             let vipEarn=0;
             vipHistory.filter(v=>v.phone===currentUser.phone).forEach(v=>{
@@ -152,13 +149,20 @@ function loadVIP(){
     let html="", totalInvest=0, totalProfit=0;
     myVIP.forEach(v=>{
         let fullProfit=v.dailyProfit*80;
-        totalInvest+=v.price;
-        totalProfit+=fullProfit;
+        totalInvest += v.price;
+        totalProfit += fullProfit;
+
         let days=Math.floor((Date.now()-v.startTime)/(1000*60*60*24));
         if(days>80) days=80;
+
+        // Thời gian mua hàng
+        let purchaseDate = new Date(v.startTime);
+        let purchaseTimeStr = purchaseDate.toLocaleString("vi-VN",{hour12:false});
+
         html+=`<div class="bg-white p-3 rounded-xl shadow">
             <div class="font-bold">${v.name}</div>
             <div class="text-xs text-gray-500">Vốn: ${v.price.toLocaleString()}₫</div>
+            <div class="text-xs text-gray-500">Thời gian mua: ${purchaseTimeStr}</div>
             <div class="text-xs text-green-600">Tổng lợi nhuận 80 ngày: ${fullProfit.toLocaleString()}₫</div>
             <div class="text-xs text-purple-600">Đã chạy: ${days}/80 ngày</div>
         </div>`;
