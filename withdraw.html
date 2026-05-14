@@ -20,7 +20,8 @@ body{background:#f5f5f5;display:flex;justify-content:center;}
 .info-line{margin-bottom:10px;font-size:15px;}
 .note{font-size:14px;color:#888;line-height:1.6;}
 .btn{width:calc(100% - 40px);height:60px;border:none;border-radius:15px;margin:0 20px;background:linear-gradient(to right,#ff7a00,#ff9d00);color:white;font-size:22px;font-weight:bold;cursor:pointer;}
-.btn:hover{opacity:0.9;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;}
+.btn:hover:not(:disabled){opacity:0.9;}
 </style>
 </head>
 <body>
@@ -72,6 +73,7 @@ const ownerSpan = document.getElementById("owner");
 const numberSpan = document.getElementById("number");
 const moneyDisplay = document.getElementById("money");
 const withdrawInput = document.getElementById("withdrawInput");
+const withdrawBtn = document.getElementById("withdrawBtn");
 
 let totalDeposit = 0;
 let totalWithdrawSuccess = 0;
@@ -102,6 +104,9 @@ document.querySelector(".back").addEventListener("click",()=>window.location.hre
 function updateBalanceUI(){
   const balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
   moneyDisplay.innerText = "₫" + balance.toLocaleString("vi-VN");
+
+  // nếu còn lệnh pending → khóa nút rút tiền
+  withdrawBtn.disabled = totalWithdrawPending>0;
 }
 
 // --- LẮNG NGHE DATABASE ---
@@ -128,17 +133,16 @@ onValue(ref(db,"withdraws"), snap=>{
 });
 
 // --- RÚT TIỀN ---
-document.getElementById("withdrawBtn").addEventListener("click",()=>{
+withdrawBtn.addEventListener("click",()=>{
   const amount = Number(withdrawInput.value);
   const selectedBank = bankSelect.value;
-
   const available = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
 
   if(!selectedBank){ alert("Vui lòng chọn ngân hàng"); return; }
   if(amount < 50000){ alert("Rút tối thiểu 50.000đ"); return; }
   if(amount > available){ alert("Số dư không đủ"); return; }
 
-  // Tạo lệnh rút tiền trên Firebase
+  // Push lệnh rút tiền lên Firebase
   push(ref(db,"withdraws"),{
     id: Date.now(),
     phone: currentUser.phone,
@@ -152,12 +156,11 @@ document.getElementById("withdrawBtn").addEventListener("click",()=>{
     status: "pending"
   });
 
-  // Cập nhật pending để trừ ngay số dư và số dư có thể rút
+  // Cập nhật pending để trừ ngay số dư
   totalWithdrawPending += amount;
   updateBalanceUI();
 
-  alert("Yêu cầu rút tiền đã được gửi.\nĐơn đang chờ admin xử lý.");
-  window.location.href="cuatoi.html";
+  alert("Yêu cầu rút tiền đã được gửi.\nChờ admin duyệt.");
 });
 </script>
 </body>
