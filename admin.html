@@ -180,7 +180,7 @@ let history = [];
 // =========================
 // KIỂM TRA ADMIN LOGIN
 // =========================
-if (localStorage.getItem("admin") !== "true") {
+if(localStorage.getItem("admin") !== "true") {
     window.location.href = "admin-login.html";
 }
 
@@ -202,6 +202,15 @@ onValue(ref(db, "withdraws"), snapshot => {
     snapshot.forEach(child => {
         let item = child.val();
         item.key = child.key;
+
+        // =========================
+        // LẤY TÊN USER TỪ REGISTER DATA
+        // =========================
+        let users = JSON.parse(localStorage.getItem("users"))||[];
+        let user = users.find(u => u.phone === item.phone);
+        if(user) item.username = user.username; // Đồng bộ tên tài khoản
+        else item.username = item.username || "-";
+
         history.push(item);
     });
     render();
@@ -276,16 +285,13 @@ function approve(index){
         let users = JSON.parse(localStorage.getItem("users"))||[];
         let userIndex = users.findIndex(u=>u.phone==item.phone);
         if(userIndex!==-1){
-            // Chỉ cộng khi duyệt NẠP TIỀN
             users[userIndex].baseMoney = (users[userIndex].baseMoney || 10000) + Number(item.amount);
             localStorage.setItem("users",JSON.stringify(users));
         }
     }
 
-    // Duyệt Rút tiền KHÔNG cộng thêm tiền
     item.status="Thành công";
 
-    // Cập nhật Firebase
     if(item.key){
         set(ref(db, item.type==="Nạp tiền"?`deposits/${item.key}`:`withdraws/${item.key}`), item);
     }
@@ -299,7 +305,6 @@ function reject(index){
     if(!item || item.status!=="pending") return;
 
     if(item.type==="Rút tiền"){
-        // Nếu từ chối rút tiền, hoàn tiền cho user
         let users = JSON.parse(localStorage.getItem("users"))||[];
         let userIndex = users.findIndex(u=>u.phone==item.phone);
         if(userIndex!==-1){
@@ -309,7 +314,6 @@ function reject(index){
     }
 
     item.status="Từ chối";
-    // Cập nhật Firebase
     if(item.key){
         set(ref(db, item.type==="Nạp tiền"?`deposits/${item.key}`:`withdraws/${item.key}`), item);
     }
@@ -326,18 +330,11 @@ function logout(){
     window.location.href="admin-login.html";
 }
 
-// =========================
-// Gán ra window để HTML gọi được
-// =========================
 window.approve = approve;
 window.reject = reject;
 window.logout = logout;
 
-// =========================
-// KHỞI CHẠY
-// =========================
 render();
-
 </script>
 
 </body>
