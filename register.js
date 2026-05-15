@@ -22,7 +22,6 @@ function getRefFromURL(){
 
 window.addEventListener("load", function(){
   createCaptcha();
-
   let ref = getRefFromURL();
   if(ref && document.getElementById("refCodeInput")){
     document.getElementById("refCodeInput").value = ref;
@@ -36,7 +35,6 @@ function onlyEnglish(text) {
 
 /* ================= REGISTER ================= */
 function register() {
-
   let users = JSON.parse(localStorage.getItem("users")) || [];
 
   let username = document.getElementById("registerUser").value.trim();

@@ -169,7 +169,6 @@ button{
             <tbody id="list"></tbody>
         </table>
     </div>
-
 </div>
 
 <script type="module">
@@ -245,7 +244,6 @@ function render(){
             <button class="approve" onclick="approve(${index})">Duyệt</button>
             <button class="cancel" onclick="reject(${index})">Từ chối</button>
         `:`<button class="disabled" disabled>Đã xử lý</button>`;
-
         list.innerHTML += `
             <tr>
                 <td>${item.phone||"-"}</td>
