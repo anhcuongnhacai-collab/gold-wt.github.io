@@ -1,0 +1,295 @@
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Arial;
+}
+
+body{
+
+  background:url("https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1974&auto=format&fit=crop")
+  no-repeat center center/cover;
+
+  min-height:100vh;
+
+  padding-bottom:120px;
+
+}
+
+/* TOP BAR */
+
+.topbar{
+
+  width:100%;
+
+  height:80px;
+
+  background:#120700;
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  padding:0 20px;
+
+  color:white;
+
+}
+
+.logo{
+
+  font-size:40px;
+
+}
+
+.top-right{
+
+  display:flex;
+
+  align-items:center;
+
+  gap:15px;
+
+}
+
+.refresh{
+
+  width:50px;
+  height:50px;
+
+  background:white;
+
+  border-radius:50%;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  color:black;
+
+  font-size:25px;
+
+}
+
+.language{
+
+  background:white;
+
+  color:black;
+
+  padding:12px 20px;
+
+  border-radius:30px;
+
+  font-size:24px;
+
+}
+
+.chat{
+
+  position:relative;
+
+  font-size:35px;
+
+}
+
+.chat span{
+
+  position:absolute;
+
+  top:-10px;
+  right:-10px;
+
+  background:red;
+
+  width:28px;
+  height:28px;
+
+  border-radius:50%;
+
+  font-size:18px;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+}
+
+/* VIDEO */
+
+.video-box{
+
+  width:95%;
+
+  margin:20px auto;
+
+}
+
+.video-box video{
+
+  width:100%;
+
+  border-radius:20px;
+
+}
+
+/* NOTICE */
+
+.notice{
+
+  width:95%;
+
+  height:70px;
+
+  background:white;
+
+  margin:auto;
+
+  border-radius:40px;
+
+  display:flex;
+
+  align-items:center;
+
+  padding:0 20px;
+
+  font-size:24px;
+
+}
+
+.notice i{
+
+  color:#a30000;
+
+  margin-right:15px;
+
+}
+
+/* MENU */
+
+.menu-grid{
+
+  width:95%;
+
+  margin:25px auto;
+
+  display:grid;
+
+  grid-template-columns:1fr 1fr;
+
+  gap:20px;
+
+}
+
+.card{
+
+  background:rgba(255,255,255,0.75);
+
+  border-radius:20px;
+
+  padding:25px;
+
+  text-align:center;
+
+  backdrop-filter:blur(10px);
+
+}
+
+.card img{
+
+  width:120px;
+
+  height:120px;
+
+  object-fit:contain;
+
+}
+
+.card p{
+
+  margin-top:15px;
+
+  font-size:30px;
+
+  font-weight:bold;
+
+}
+
+/* WHATSAPP */
+
+.whatsapp{
+
+  position:fixed;
+
+  left:15px;
+
+  bottom:140px;
+
+  width:80px;
+  height:80px;
+
+  background:#25D366;
+
+  border-radius:20px;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  color:white;
+
+  font-size:55px;
+
+}
+
+/* BOTTOM NAV */
+
+.bottom-nav{
+
+  position:fixed;
+
+  bottom:0;
+
+  width:100%;
+
+  height:100px;
+
+  background:white;
+
+  display:flex;
+
+  justify-content:space-around;
+
+  align-items:center;
+
+}
+
+.nav-item{
+
+  text-align:center;
+
+  color:#888;
+
+}
+
+.nav-item i{
+
+  font-size:32px;
+
+}
+
+.nav-item p{
+
+  font-size:18px;
+
+  margin-top:5px;
+
+}
+
+.active{
+
+  color:#a30000;
+
+}

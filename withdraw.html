@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rút tiền</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+body{background:#f5f5f5;display:flex;justify-content:center;}
+.container{width:100%;max-width:420px;min-height:100vh;background:#f5f5f5;}
+.header{width:100%;height:70px;background:white;display:flex;justify-content:center;align-items:center;font-size:28px;font-weight:bold;position:sticky;top:0;box-shadow:0 2px 10px rgba(0,0,0,0.05);position:relative;}
+.back{position:absolute;left:20px;font-size:24px;cursor:pointer;}
+.card{background:white;margin:20px;border-radius:20px;padding:25px;box-shadow:0 5px 15px rgba(0,0,0,0.05);}
+.title{font-size:18px;color:#777;margin-bottom:10px;}
+.money{font-size:38px;font-weight:bold;color:#ff7a00;margin-bottom:25px;}
+.input-box{width:100%;height:60px;border:2px solid #eee;border-radius:15px;padding:0 15px;margin-bottom:20px;background:#fafafa;}
+.input-box input,.input-box select{width:100%;height:100%;border:none;outline:none;background:none;font-size:18px;}
+.info-box{width:100%;background:#fafafa;border-radius:15px;padding:15px;margin-bottom:20px;border:2px dashed #ffb067;}
+.info-line{margin-bottom:10px;font-size:15px;}
+.note{font-size:14px;color:#888;line-height:1.6;}
+.btn{width:calc(100% - 40px);height:60px;border:none;border-radius:15px;margin:0 20px;background:linear-gradient(to right,#ff7a00,#ff9d00);color:white;font-size:22px;font-weight:bold;cursor:pointer;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;}
+.btn:hover:not(:disabled){opacity:0.9;}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <i class="fa-solid fa-arrow-left back"></i>
+    Rút tiền
+  </div>
+
+  <div class="card">
+    <div class="title">Số dư có thể rút</div>
+    <div class="money" id="money">₫0</div>
+
+    <div class="input-box">
+      <select id="bankSelect">
+        <option value="">-- Chọn ngân hàng --</option>
+      </select>
+    </div>
+
+    <div class="info-box" id="bankInfo" style="display:none;">
+      <div class="info-line"><b>Chủ tài khoản:</b> <span id="owner"></span></div>
+      <div class="info-line"><b>Số tài khoản:</b> <span id="number"></span></div>
+    </div>
+
+    <div class="input-box">
+      <input type="number" id="withdrawInput" placeholder="Nhập số tiền cần rút">
+    </div>
+
+    <div class="note">
+      • Rút tối thiểu 50.000đ <br>
+      • Xử lý trong 5 - 30 phút
+    </div>
+  </div>
+
+  <button class="btn" id="withdrawBtn">Xác nhận rút tiền</button>
+</div>
+
+<script type="module">
+import { db, ref, push, onValue } from "./firebase-config.js";
+
+let currentUser = JSON.parse(localStorage.getItem("currentUser"));
+if(!currentUser) window.location.href="index.html";
+if(!currentUser.baseMoney) currentUser.baseMoney=10000;
+
+// Bank info từ cuatoi
+const bankData = JSON.parse(localStorage.getItem("bankInfo"));
+const bankSelect = document.getElementById("bankSelect");
+const bankInfoBox = document.getElementById("bankInfo");
+const ownerSpan = document.getElementById("owner");
+const numberSpan = document.getElementById("number");
+const moneyDisplay = document.getElementById("money");
+const withdrawInput = document.getElementById("withdrawInput");
+const withdrawBtn = document.getElementById("withdrawBtn");
+
+let totalDeposit = 0;
+let totalWithdrawSuccess = 0;
+let totalWithdrawPending = 0;
+
+// --- LOAD NGÂN HÀNG ---
+if(bankData){
+  const option = document.createElement("option");
+  option.value = bankData.bank;
+  option.innerText = bankData.bank;
+  bankSelect.appendChild(option);
+}
+
+function showBankInfo(){
+  const selected = bankSelect.value;
+  if(bankData && selected===bankData.bank){
+    bankInfoBox.style.display="block";
+    ownerSpan.innerText=bankData.name;
+    numberSpan.innerText=bankData.number;
+  } else bankInfoBox.style.display="none";
+}
+bankSelect.addEventListener("change", showBankInfo);
+
+// --- QUAY LẠI ---
+document.querySelector(".back").addEventListener("click",()=>window.location.href="cuatoi.html");
+
+// --- CẬP NHẬT SỐ DƯ ---
+function updateBalanceUI(){
+  const balance = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
+  moneyDisplay.innerText = "₫"+balance.toLocaleString("vi-VN");
+
+  // disable nút nếu có lệnh pending hoặc không đủ tiền
+  withdrawBtn.disabled = totalWithdrawPending>0 || balance<50000;
+}
+
+// --- LẮNG NGHE DATABASE ---
+onValue(ref(db,"deposits"), snap=>{
+  totalDeposit=0;
+  snap.forEach(s=>{
+    const v=s.val();
+    if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit+=Number(v.amount);
+  });
+  updateBalanceUI();
+});
+
+onValue(ref(db,"withdraws"), snap=>{
+  totalWithdrawSuccess=0;
+  totalWithdrawPending=0;
+  snap.forEach(s=>{
+    const v=s.val();
+    if(v.phone===currentUser.phone){
+      if(v.status==="Thành công") totalWithdrawSuccess+=Number(v.amount);
+      else if(v.status==="pending") totalWithdrawPending+=Number(v.amount);
+    }
+  });
+  updateBalanceUI();
+});
+
+// --- RÚT TIỀN ---
+withdrawBtn.addEventListener("click",()=>{
+  const amount = Number(withdrawInput.value);
+  const selectedBank = bankSelect.value;
+  const available = currentUser.baseMoney + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
+
+  if(!selectedBank){ alert("Vui lòng chọn ngân hàng"); return; }
+  if(amount < 50000){ alert("Rút tối thiểu 50.000đ"); return; }
+  if(amount > available){ alert("Số dư không đủ"); return; }
+
+  // Push lệnh rút tiền
+  push(ref(db,"withdraws"),{
+    id: Date.now(),
+    phone: currentUser.phone,
+    username: currentUser.username||"",
+    type:"Rút tiền",
+    amount: amount,
+    bank: bankData?.bank||"",
+    bankOwner: bankData?.name||"",
+    bankNumber: bankData?.number||"",
+    time: new Date().toLocaleString("vi-VN"),
+    status: "pending"
+  });
+
+  // Trừ ngay balance + withdraw
+  totalWithdrawPending += amount;
+  updateBalanceUI();
+
+  alert("Yêu cầu rút tiền đã gửi.\nChờ admin duyệt.");
+});
+</script>
+</body>
+</html>
