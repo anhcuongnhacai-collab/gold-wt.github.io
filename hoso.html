@@ -9,18 +9,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-body {
-  font-family: 'Inter', sans-serif;
-  background-color: #f3f4f6;
-}
-
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-}
+body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 </style>
 </head>
 
@@ -55,7 +46,6 @@ body {
     <div class="text-xs text-gray-500">Có thể rút</div>
     <div class="font-bold text-blue-500" id="withdrawable">0₫</div>
   </div>
-
 </div>
 
 <div class="bg-white p-3 rounded-xl shadow">
@@ -102,128 +92,122 @@ body {
     </svg>
     <span class="text-[10px]">Của tôi</span>
   </button>
-
 </nav>
 
 </div>
 
-<script>
+<script type="module">
+import { db, ref, onValue, set } from "./firebase-config.js";
 
 /* ======================
    LOAD DATA
 ====================== */
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
-let users = JSON.parse(localStorage.getItem("users")) || [];
-let vipHistory = JSON.parse(localStorage.getItem("vipHistory")) || [];
-
 if(!currentUser){
   window.location.href = "login.html";
 }
 
-let user = users.find(u => u.phone == currentUser.phone);
-if(!user){
-  user = { phone: currentUser.phone, money: 0 };
-  users.push(user);
-}
+let user = null;
+let vipHistory = [];
+
+// Lấy user từ Firebase
+onValue(ref(db, "users"), snapshot=>{
+    snapshot.forEach(child=>{
+        let u = child.val();
+        if(u.phone === currentUser.phone){
+            user = u;
+        }
+    });
+
+    // Nếu chưa có, tạo mới
+    if(!user){
+        user = { phone: currentUser.phone, money:0 };
+        set(ref(db, `users/${currentUser.phone}`), user);
+    }
+
+    // Hiển thị số dư ban đầu
+    document.getElementById("balance2").innerText = user.money.toLocaleString("vi-VN") + "₫";
+});
+
+// Lấy vipHistory từ Firebase
+onValue(ref(db, "vipHistory"), snapshot=>{
+    vipHistory = [];
+    snapshot.forEach(child=>{
+        let v = child.val();
+        v.key = child.key;
+        if(v.phone === currentUser.phone){
+            vipHistory.push(v);
+        }
+    });
+    loadVIP();
+});
 
 /* ======================
    AUTO VIP (24H LOGIC)
 ====================== */
 function runVIP(){
+    if(!user) return;
+    let now = Date.now();
+    let oneDay = 24*60*60*1000;
+    let withdrawable = 0;
 
-let now = Date.now();
-let oneDay = 24 * 60 * 60 * 1000;
+    vipHistory.forEach(v=>{
+        if(!v.lastClaim) v.lastClaim = v.startTime;
+        let diff = now - v.lastClaim;
+        if(diff >= oneDay){
+            let days = Math.floor(diff/oneDay);
+            let earn = v.dailyProfit*days;
+            user.money += earn;
+            withdrawable += earn;
+            v.lastClaim += days*oneDay;
 
-let myVIP = vipHistory.filter(v => v.phone == currentUser.phone);
+            // Đồng bộ vipHistory lên Firebase
+            set(ref(db, `vipHistory/${v.key}`), v);
+        }
+    });
 
-let withdrawable = 0;
+    // Cập nhật money user lên Firebase
+    set(ref(db, `users/${currentUser.phone}`), user);
 
-myVIP.forEach(v => {
-
-  if(!v.lastClaim) v.lastClaim = v.startTime;
-
-  let diff = now - v.lastClaim;
-
-  if(diff >= oneDay){
-
-    let days = Math.floor(diff / oneDay);
-
-    let earn = v.dailyProfit * days;
-
-    user.money += earn;
-    withdrawable += earn;
-
-    v.lastClaim += days * oneDay;
-  }
-});
-
-localStorage.setItem("users", JSON.stringify(users));
-localStorage.setItem("vipHistory", JSON.stringify(vipHistory));
-
-document.getElementById("withdrawable").innerText =
-  withdrawable.toLocaleString("vi-VN") + "₫";
-
-document.getElementById("balance2").innerText =
-  user.money.toLocaleString("vi-VN") + "₫";
-
+    document.getElementById("withdrawable").innerText = withdrawable.toLocaleString("vi-VN")+"₫";
+    document.getElementById("balance2").innerText = user.money.toLocaleString("vi-VN")+"₫";
 }
 
 /* ======================
    LOAD VIP LIST
 ====================== */
 function loadVIP(){
+    let html = "";
+    let totalInvest = 0;
+    let totalProfit = 0;
 
-let myVIP = vipHistory.filter(v => v.phone == currentUser.phone);
+    if(vipHistory.length===0){
+        document.getElementById("list").innerHTML = `<div class="text-gray-400 text-sm">Chưa có gói VIP</div>`;
+        document.getElementById("totalInvest").innerText = "0₫";
+        document.getElementById("totalProfit").innerText = "0₫";
+        return;
+    }
 
-let html = "";
-let totalInvest = 0;
-let totalProfit = 0;
+    vipHistory.forEach(v=>{
+        let fullProfit = v.dailyProfit*80;
+        totalInvest += v.price;
+        totalProfit += fullProfit;
 
-if(myVIP.length === 0){
-  document.getElementById("list").innerHTML =
-    `<div class="text-gray-400 text-sm">Chưa có gói VIP</div>`;
-  return;
-}
+        let days = Math.floor((Date.now()-v.startTime)/(1000*60*60*24));
+        if(days>80) days = 80;
 
-myVIP.forEach(v => {
+        html += `
+        <div class="bg-white p-3 rounded-xl shadow">
+          <div class="font-bold">${v.name}</div>
+          <div class="text-xs text-gray-500">Vốn: ${v.price.toLocaleString()}₫</div>
+          <div class="text-xs text-green-600">Tổng lợi nhuận 80 ngày: ${fullProfit.toLocaleString()}₫</div>
+          <div class="text-xs text-purple-600">Đã chạy: ${days}/80 ngày</div>
+        </div>`;
+    });
 
-let fullProfit = v.dailyProfit * 80;
-
-totalInvest += v.price;
-totalProfit += fullProfit;
-
-let days = Math.floor((Date.now() - v.startTime) / (1000*60*60*24));
-if(days > 80) days = 80;
-
-html += `
-<div class="bg-white p-3 rounded-xl shadow">
-
-  <div class="font-bold">${v.name}</div>
-
-  <div class="text-xs text-gray-500">
-    Vốn: ${v.price.toLocaleString()}₫
-  </div>
-
-  <div class="text-xs text-green-600">
-    Tổng lợi nhuận 80 ngày: ${fullProfit.toLocaleString()}₫
-  </div>
-
-  <div class="text-xs text-purple-600">
-    Đã chạy: ${days}/80 ngày
-  </div>
-
-</div>
-`;
-});
-
-document.getElementById("list").innerHTML = html;
-
-document.getElementById("totalInvest").innerText =
-  totalInvest.toLocaleString("vi-VN") + "₫";
-
-document.getElementById("totalProfit").innerText =
-  totalProfit.toLocaleString("vi-VN") + "₫";
-
+    document.getElementById("list").innerHTML = html;
+    document.getElementById("totalInvest").innerText = totalInvest.toLocaleString("vi-VN")+"₫";
+    document.getElementById("totalProfit").innerText = totalProfit.toLocaleString("vi-VN")+"₫";
 }
 
 /* ======================
@@ -236,10 +220,7 @@ function goCuaToi(){ window.location.href="cuatoi.html"; }
 /* INIT */
 runVIP();
 loadVIP();
-
-/* auto sync */
-setInterval(runVIP, 60000);
-
+setInterval(runVIP, 60000); // auto sync mỗi 1 phút
 </script>
 
 </body>
