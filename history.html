@@ -2,18 +2,10 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lịch sử thanh toán</title>
-
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <style>
-/* ======================== */
-/* GIỮ NGUYÊN STYLE CỦA BẠN */
-/* ======================== */
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
 body{background:#f3f3f3;display:flex;justify-content:center;}
 .container{width:360px;min-height:100vh;background:#f5f5f5;padding-bottom:30px;}
@@ -36,14 +28,13 @@ body{background:#f3f3f3;display:flex;justify-content:center;}
 .empty{text-align:center;margin-top:80px;color:#888;font-size:18px;}
 </style>
 </head>
-
 <body>
 
 <div class="container">
 
     <!-- HEADER -->
     <div class="header">
-        <div class="back" onclick="goBack()"><i class="fa-solid fa-angle-left"></i></div>
+        <div class="back"><i class="fa-solid fa-angle-left"></i></div>
         <div class="title">Lịch sử thanh toán</div>
     </div>
 
@@ -69,79 +60,70 @@ if(currentUser){
 
 let historyList = document.getElementById("historyList");
 
-// ============================
-// LẤY LỊCH SỬ TỪ LOCALSTORAGE (giữ nguyên fallback cũ)
-// ============================
-let allHistory = JSON.parse(localStorage.getItem("history")) || [];
-let userHistory = currentUser ? allHistory.filter(i=>i.phone==currentUser.phone) : [];
-function renderLocalHistory(){
-    if(userHistory.length==0){
+// Hàm render list
+function renderHistory(userHistory){
+    if(userHistory.length === 0){
         historyList.innerHTML = `<div class="empty">Chưa có giao dịch nào</div>`;
         return;
     }
+
     historyList.innerHTML = "";
-    userHistory.reverse().forEach(item=>{
-        let typeClass = item.type=="Nạp tiền" ? "deposit":"withdraw";
-        let icon = item.type=="Nạp tiền" ? "+":"-";
+    // sort mới nhất lên trên
+    userHistory.sort((a,b)=>b.id - a.id).forEach(item => {
+        let typeClass = item.type == "Nạp tiền" ? "deposit":"withdraw";
+        let icon = item.type == "Nạp tiền" ? "+":"-";
+        let statusText = item.status === "pending" ? "Đang chờ" : item.status || "Thành công";
+
         historyList.innerHTML += `
-            <div class="history-item">
-                <div class="left">
-                    <div class="type">${item.type}</div>
-                    <div class="time">${item.time}</div>
-                </div>
-                <div class="right">
-                    <div class="money ${typeClass}">${icon}${Number(item.amount).toLocaleString("vi-VN")}₫</div>
-                    <div class="status">${item.status || "Thành công"}</div>
-                </div>
+        <div class="history-item">
+            <div class="left">
+                <div class="type">${item.type}</div>
+                <div class="time">${item.time}</div>
             </div>
+            <div class="right">
+                <div class="money ${typeClass}">${icon}${Number(item.amount).toLocaleString("vi-VN")}₫</div>
+                <div class="status">${statusText}</div>
+            </div>
+        </div>
         `;
     });
 }
-renderLocalHistory();
 
 // ============================
-// LẤY LỊCH SỬ TỪ FIREBASE (real-time)
+// LOAD HISTORY TỪ FIREBASE (cả deposits & withdraws)
 // ============================
 if(currentUser){
-    onValue(ref(db, "deposits"), snapshot=>{
-        let firebaseHistory = [];
-        snapshot.forEach(child=>{
-            let item = child.val();
-            firebaseHistory.push(item);
-        });
+    function loadFirebaseHistory(){
+        let userHistory = [];
 
-        // filter user hiện tại
-        userHistory = firebaseHistory.filter(i => i.phone == currentUser.phone);
+        // Lấy deposits
+        onValue(ref(db,"deposits"), snapshot=>{
+            snapshot.forEach(child=>{
+                let item = child.val();
+                if(item.phone === currentUser.phone) userHistory.push(item);
+            });
 
-        // render
-        if(userHistory.length==0){
-            historyList.innerHTML = `<div class="empty">Chưa có giao dịch nào</div>`;
-            return;
-        }
-        historyList.innerHTML = "";
-        userHistory.sort((a,b)=>b.id - a.id).forEach(item=>{
-            let typeClass = item.type=="Nạp tiền" ? "deposit":"withdraw";
-            let icon = item.type=="Nạp tiền" ? "+":"-";
-            historyList.innerHTML += `
-                <div class="history-item">
-                    <div class="left">
-                        <div class="type">${item.type}</div>
-                        <div class="time">${item.time}</div>
-                    </div>
-                    <div class="right">
-                        <div class="money ${typeClass}">${icon}${Number(item.amount).toLocaleString("vi-VN")}₫</div>
-                        <div class="status">${item.status || "Thành công"}</div>
-                    </div>
-                </div>
-            `;
+            // Lấy withdraws
+            onValue(ref(db,"withdraws"), snap2=>{
+                snap2.forEach(child=>{
+                    let item = child.val();
+                    if(item.phone === currentUser.phone) userHistory.push(item);
+                });
+
+                renderHistory(userHistory);
+            });
         });
-    });
+    }
+
+    loadFirebaseHistory();
 }
 
+// ============================
 // BACK
-function goBack(){
+// ============================
+document.querySelector(".back").addEventListener("click", ()=>{
     window.location.href = "cuatoi.html";
-}
+});
 </script>
 
 </body>
