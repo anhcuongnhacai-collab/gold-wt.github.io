@@ -92,12 +92,11 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
 </div>
 
 <script type="module">
-import { db, ref, onValue, get, set, push } from "./firebase-config.js";
+import { db, ref, onValue, push, set } from "./firebase-config.js";
 
-// Lấy user hiện tại
+// ====== USER ======
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href="index.html";
-if(!currentUser.baseMoney) currentUser.baseMoney = 10000;
 
 // ====== VIP PACKAGES ======
 const vipPackages = [
@@ -143,8 +142,19 @@ data-name="${pkg.name}" data-price="${pkg.price}">Mua ngay</button>
 
 // ====== ĐỒNG BỘ SỐ DƯ ======
 let totalDeposit=0, totalWithdrawSuccess=0, totalWithdrawPending=0;
+const userRef = ref(db, "users/" + currentUser.phone);
 
-function updateBalanceUI(available){
+// Lắng nghe user từ Firebase
+onValue(userRef, snap => {
+  const userData = snap.val();
+  if(userData){
+    currentUser.baseMoney = Number(userData.baseMoney || 10000);
+  }
+  updateBalanceUI();
+});
+
+function updateBalanceUI(){
+  const available = (currentUser.baseMoney||10000) + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
   document.getElementById("balance").innerText = "₫"+Number(available).toLocaleString("vi-VN");
 }
 
@@ -155,8 +165,7 @@ onValue(ref(db,"deposits"),snap=>{
     const v=d.val();
     if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit+=Number(v.amount);
   });
-  const available = (currentUser.baseMoney||10000)+totalDeposit-totalWithdrawSuccess-totalWithdrawPending;
-  updateBalanceUI(available);
+  updateBalanceUI();
 });
 
 // Lắng nghe withdraws
@@ -169,44 +178,61 @@ onValue(ref(db,"withdraws"),snap=>{
       else if(v.status==="pending") totalWithdrawPending+=Number(v.amount);
     }
   });
-  const available = (currentUser.baseMoney||10000)+totalDeposit-totalWithdrawSuccess-totalWithdrawPending;
-  updateBalanceUI(available);
+  updateBalanceUI();
 });
 
 // ====== MUA VIP ======
-document.addEventListener("click", async e=>{
+document.addEventListener("click", e => {
   if(e.target.classList.contains("buy-btn")){
-    const name = e.target.dataset.name;
-    const price = Number(e.target.dataset.price.replace(/\./g,""));
-
-    const userRef = ref(db, `users/${currentUser.phone}`);
-    const snapshot = await get(userRef);
-    const userData = snapshot.val() || {};
-    const available = (userData.baseMoney || 10000) + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
+    let name = e.target.dataset.name;
+    let price = Number(e.target.dataset.price.replace(/\./g,""));
+    const available = (currentUser.baseMoney||10000) + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
 
     if(price > available){
       alert("Số dư không đủ!");
       return;
     }
 
-    // Trừ tiền
-    await set(userRef, { ...userData, baseMoney: available - price });
-    updateBalanceUI(available - price);
+    // Lưu VIP vào Firebase
+ document.addEventListener("click", e => {
+  if(e.target.classList.contains("buy-btn")){
+    let name = e.target.dataset.name;
+    let price = Number(e.target.dataset.price.replace(/\./g,""));
+    const available = currentUser.baseMoney || 10000;
 
-    // Thêm VIP
-    const vipRef = ref(db, 'vipHistory');
-    const vipData = {
+    if(price > available){
+      alert("Số dư không đủ!");
+      return;
+    }
+
+    // Trừ tiền trước khi push VIP
+    const newBalance = currentUser.baseMoney - price;
+
+    // Trừ tiền + push VIP chỉ khi push VIP thành công
+    push(ref(db, "vip-purchases"), {
       phone: currentUser.phone,
-      name,
-      price,
-      dailyProfit: price * 0.17,
-      duration: 80,
-      startTime: Date.now(),
-      lastClaim: Date.now()
-    };
-    await push(vipRef, vipData);
-
-    alert("Mua thành công "+name);
+      packageName: name,
+      price: price,
+      timestamp: Date.now()
+    }).then(() => {
+      // Cập nhật baseMoney trên Firebase
+      set(userRef, {
+        ...currentUser,
+        baseMoney: newBalance
+      }).then(()=>{
+        currentUser.baseMoney = newBalance;
+        updateBalanceUI();
+        alert("Mua thành công " + name);
+      }).catch(err=>{
+        console.error(err);
+        alert("Lỗi khi cập nhật số dư!");
+      });
+    }).catch(err=>{
+      console.error(err);
+      alert("Lỗi khi lưu gói VIP!");
+    });
+  }
+});
   }
 });
 
@@ -225,6 +251,7 @@ function goIntro(){ window.location.href="intro.html"; }
 function goCuaToi(){ window.location.href="cuatoi.html"; }
 function goDeposit(){ window.location.href="deposit.html"; }
 function goWithdraw(){ window.location.href="withdraw.html"; }
+
 </script>
 
 </body>

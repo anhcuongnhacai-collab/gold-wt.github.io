@@ -27,7 +27,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
 <!-- BALANCE -->
 <div class="bg-white rounded-2xl p-4 shadow">
   <div class="text-gray-500 text-sm">Tổng số dư</div>
-  <div class="text-xl font-bold text-orange-500" id="balance2">0₫</div>
+  <div class="text-xl font-bold text-orange-500" id="balance">0₫</div>
 </div>
 
 <!-- SUMMARY -->
@@ -37,8 +37,8 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
     <div class="font-bold" id="totalInvest">0₫</div>
   </div>
   <div class="bg-white p-3 rounded-xl shadow">
-    <div class="text-xs text-gray-500">Có thể rút</div>
-    <div class="font-bold text-blue-500" id="withdrawable">0₫</div>
+    <div class="text-xs text-gray-500">Lợi nhuận mỗi ngày</div>
+    <div class="font-bold text-blue-500" id="dailyProfit">0₫</div>
   </div>
 </div>
 
@@ -50,7 +50,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
 <!-- VIP LIST -->
 <div class="space-y-3">
   <h2 class="font-bold">Gói VIP đã mua</h2>
-  <div id="list"></div>
+  <div id="vipList"></div>
 </div>
 
 </main>
@@ -92,80 +92,100 @@ import { db, ref, onValue } from "./firebase-config.js";
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href="index.html";
 
-let balanceEl = document.getElementById("balance2");
+if(!currentUser.baseMoney) currentUser.baseMoney = 10000;
 
-// =========================
-// Lắng nghe deposits và withdraws để update số dư giống home.html
-// =========================
-let totalDeposit = 0, totalWithdrawSuccess = 0, totalWithdrawPending = 0;
+const balanceEl = document.getElementById("balance");
+const totalInvestEl = document.getElementById("totalInvest");
+const dailyProfitEl = document.getElementById("dailyProfit");
+const totalProfitEl = document.getElementById("totalProfit");
+const vipListEl = document.getElementById("vipList");
 
-function updateBalanceUI() {
-  const available = (currentUser.baseMoney || 10000) + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
-  balanceEl.innerText = available.toLocaleString("vi-VN") + "₫";
+let totalDeposit = 0;
+let totalWithdrawSuccess = 0;
+let totalWithdrawPending = 0;
+
+// Cập nhật số dư
+function updateBalance() {
+    const balance = (currentUser.baseMoney || 10000) + totalDeposit - totalWithdrawSuccess;
+    const available = balance - totalWithdrawPending;
+    balanceEl.innerText = balance.toLocaleString("vi-VN") + "₫";
 }
 
 // Lắng nghe deposits
-onValue(ref(db, "deposits"), snap => {
-  totalDeposit = 0;
-  snap.forEach(d => {
-    const v = d.val();
-    if (v.phone === currentUser.phone && v.status === "Thành công") totalDeposit += Number(v.amount);
-  });
-  updateBalanceUI();
+onValue(ref(db,"deposits"), snap=>{
+    totalDeposit=0;
+    snap.forEach(d=>{
+        const v=d.val();
+        if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit += Number(v.amount);
+    });
+    updateBalance();
 });
 
 // Lắng nghe withdraws
-onValue(ref(db, "withdraws"), snap => {
-  totalWithdrawSuccess = 0;
-  totalWithdrawPending = 0;
-  snap.forEach(w => {
-    const v = w.val();
-    if (v.phone === currentUser.phone) {
-      if (v.status === "Thành công") totalWithdrawSuccess += Number(v.amount);
-      else if (v.status === "pending") totalWithdrawPending += Number(v.amount);
-    }
-  });
-  updateBalanceUI();
+onValue(ref(db,"withdraws"), snap=>{
+    totalWithdrawSuccess=0;
+    totalWithdrawPending=0;
+    snap.forEach(w=>{
+        const v=w.val();
+        if(v.phone===currentUser.phone){
+            if(v.status==="Thành công") totalWithdrawSuccess+=Number(v.amount);
+            else if(v.status==="pending") totalWithdrawPending+=Number(v.amount);
+        }
+    });
+    updateBalance();
 });
 
-// ====== LẮNG NGHE VIP HISTORY ======
-const vipHistoryRef = ref(db, 'vipHistory');
-let vipHistory = [];
+// Lắng nghe VIP
+const vipRef = ref(db,"vipHistory");
+onValue(vipRef, snap=>{
+    const vipData = [];
+    snap.forEach(child => vipData.push(child.val()));
+    renderVIP(vipData);
+});
 
-function renderVIP() {
-    vipListEl.innerHTML = '';
-    let totalInvest = 0, totalProfit = 0, withdrawable = 0;
-    const myVIP = vipHistory.filter(v => v.phone === currentUser.phone);
-    if(myVIP.length === 0){
-        vipListEl.innerHTML = '<div class="text-gray-400 text-sm">Chưa có gói VIP</div>';
+function renderVIP(vipData){
+    const myVIP = vipData
+        .filter(v => v && v.phone===currentUser.phone) // bỏ qua null
+        .map(v => ({
+            ...v,
+            price: Number(v.price || 0),
+            duration: Number(v.duration || 80),
+            dailyProfit: Number(v.dailyProfit || (v.price ? v.price*0.17 : 0))
+        }));
+
+    vipListEl.innerHTML="";
+    let totalInvest = 0;
+    let dailyProfit = 0;
+    let totalProfit = 0;
+
+    if(myVIP.length===0){
+        vipListEl.innerHTML='<div class="text-gray-400 text-sm">Chưa có gói VIP</div>';
     }
-    myVIP.forEach(v => {
-        const daysRun = Math.min(Math.floor((Date.now()-v.startTime)/(1000*60*60*24)), v.duration);
-        const fullProfit = v.dailyProfit * v.duration;
-        const profitSoFar = v.dailyProfit * daysRun;
-        withdrawable += profitSoFar;
+
+    myVIP.forEach(v=>{
         totalInvest += v.price;
-        totalProfit += fullProfit;
+        dailyProfit += v.dailyProfit;
+        totalProfit += v.dailyProfit * v.duration;
+
+        const start = v.startTime || Date.now();
+        const duration = v.duration;
+        const daysRun = Math.min(Math.floor((Date.now()-start)/(1000*60*60*24)), duration);
+
         vipListEl.innerHTML += `
         <div class="bg-white p-3 rounded-xl shadow">
             <div class="font-bold">${v.name}</div>
             <div class="text-xs text-gray-500">Vốn: ${v.price.toLocaleString()}₫</div>
-            <div class="text-xs text-green-600">Tổng lợi nhuận ${v.duration} ngày: ${fullProfit.toLocaleString()}₫</div>
-            <div class="text-xs text-purple-600">Đã chạy: ${daysRun}/${v.duration} ngày</div>
+            <div class="text-xs text-green-600">Tổng lợi nhuận ${duration} ngày: ${ (v.dailyProfit*duration).toLocaleString() }₫</div>
+            <div class="text-xs text-purple-600">Đã chạy: ${daysRun}/${duration} ngày</div>
         </div>`;
     });
-    totalInvestEl.innerText = totalInvest.toLocaleString("vi-VN") + "₫";
-    totalProfitEl.innerText = totalProfit.toLocaleString("vi-VN") + "₫";
-    withdrawableEl.innerText = withdrawable.toLocaleString("vi-VN") + "₫";
+
+    totalInvestEl.innerText = totalInvest.toLocaleString()+"₫";
+    dailyProfitEl.innerText = dailyProfit.toLocaleString()+"₫";
+    totalProfitEl.innerText = totalProfit.toLocaleString()+"₫";
 }
 
-onValue(vipHistoryRef, snap => {
-    vipHistory = [];
-    snap.forEach(child => vipHistory.push(child.val()));
-    renderVIP();
-});
-
-// ====== NAV ======
+// Navigation
 function goHome(){ window.location.href="home.html"; }
 function goHoSo(){ window.location.href="hoso.html"; }
 function goIntro(){ window.location.href="intro.html"; }
@@ -174,7 +194,7 @@ window.goHome = goHome;
 window.goHoSo = goHoSo;
 window.goIntro = goIntro;
 window.goCuaToi = goCuaToi;
-</script>
 
+</script>
 </body>
 </html>
