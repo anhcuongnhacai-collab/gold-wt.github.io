@@ -93,59 +93,76 @@ let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href="index.html";
 
 let balanceEl = document.getElementById("balance2");
-let totalInvestEl = document.getElementById("totalInvest");
-let withdrawableEl = document.getElementById("withdrawable");
-let totalProfitEl = document.getElementById("totalProfit");
-let vipListEl = document.getElementById("list");
 
-const userRef = ref(db, `users/${currentUser.phone}`);
-let userMoney = 10000;
+// =========================
+// Lắng nghe deposits và withdraws để update số dư giống home.html
+// =========================
+let totalDeposit = 0, totalWithdrawSuccess = 0, totalWithdrawPending = 0;
 
-// ====== LẮNG NGHE SỐ DƯ ======
-onValue(userRef, snap=>{
-  const u = snap.val();
-  if(u && u.money!==undefined) userMoney = u.money;
-  balanceEl.innerText = userMoney.toLocaleString("vi-VN")+"₫";
+function updateBalanceUI() {
+  const available = (currentUser.baseMoney || 10000) + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
+  balanceEl.innerText = available.toLocaleString("vi-VN") + "₫";
+}
+
+// Lắng nghe deposits
+onValue(ref(db, "deposits"), snap => {
+  totalDeposit = 0;
+  snap.forEach(d => {
+    const v = d.val();
+    if (v.phone === currentUser.phone && v.status === "Thành công") totalDeposit += Number(v.amount);
+  });
+  updateBalanceUI();
 });
 
-// ====== LẤY VIP HISTORY ======
+// Lắng nghe withdraws
+onValue(ref(db, "withdraws"), snap => {
+  totalWithdrawSuccess = 0;
+  totalWithdrawPending = 0;
+  snap.forEach(w => {
+    const v = w.val();
+    if (v.phone === currentUser.phone) {
+      if (v.status === "Thành công") totalWithdrawSuccess += Number(v.amount);
+      else if (v.status === "pending") totalWithdrawPending += Number(v.amount);
+    }
+  });
+  updateBalanceUI();
+});
+
+// ====== LẮNG NGHE VIP HISTORY ======
 const vipHistoryRef = ref(db, 'vipHistory');
 let vipHistory = [];
 
-function renderVIP(){
-  vipListEl.innerHTML = '';
-  let totalInvest = 0, totalProfit = 0, withdrawable = 0;
-  const myVIP = vipHistory.filter(v=>v.phone===currentUser.phone);
-  if(myVIP.length===0){
-    vipListEl.innerHTML = '<div class="text-gray-400 text-sm">Chưa có gói VIP</div>';
-  }
-  myVIP.forEach(v=>{
-    const daysRun = Math.min(Math.floor((Date.now()-v.startTime)/(1000*60*60*24)), v.duration);
-    const fullProfit = v.dailyProfit* v.duration;
-    const profitSoFar = v.dailyProfit*daysRun;
-    withdrawable += profitSoFar;
-    totalInvest += v.price;
-    totalProfit += fullProfit;
-    vipListEl.innerHTML += `
-    <div class="bg-white p-3 rounded-xl shadow">
-      <div class="font-bold">${v.name}</div>
-      <div class="text-xs text-gray-500">Vốn: ${v.price.toLocaleString()}₫</div>
-      <div class="text-xs text-green-600">Tổng lợi nhuận 80 ngày: ${fullProfit.toLocaleString()}₫</div>
-      <div class="text-xs text-purple-600">Đã chạy: ${daysRun}/${v.duration} ngày</div>
-    </div>`;
-  });
-  totalInvestEl.innerText = totalInvest.toLocaleString("vi-VN")+"₫";
-  totalProfitEl.innerText = totalProfit.toLocaleString("vi-VN")+"₫";
-  withdrawableEl.innerText = withdrawable.toLocaleString("vi-VN")+"₫";
+function renderVIP() {
+    vipListEl.innerHTML = '';
+    let totalInvest = 0, totalProfit = 0, withdrawable = 0;
+    const myVIP = vipHistory.filter(v => v.phone === currentUser.phone);
+    if(myVIP.length === 0){
+        vipListEl.innerHTML = '<div class="text-gray-400 text-sm">Chưa có gói VIP</div>';
+    }
+    myVIP.forEach(v => {
+        const daysRun = Math.min(Math.floor((Date.now()-v.startTime)/(1000*60*60*24)), v.duration);
+        const fullProfit = v.dailyProfit * v.duration;
+        const profitSoFar = v.dailyProfit * daysRun;
+        withdrawable += profitSoFar;
+        totalInvest += v.price;
+        totalProfit += fullProfit;
+        vipListEl.innerHTML += `
+        <div class="bg-white p-3 rounded-xl shadow">
+            <div class="font-bold">${v.name}</div>
+            <div class="text-xs text-gray-500">Vốn: ${v.price.toLocaleString()}₫</div>
+            <div class="text-xs text-green-600">Tổng lợi nhuận ${v.duration} ngày: ${fullProfit.toLocaleString()}₫</div>
+            <div class="text-xs text-purple-600">Đã chạy: ${daysRun}/${v.duration} ngày</div>
+        </div>`;
+    });
+    totalInvestEl.innerText = totalInvest.toLocaleString("vi-VN") + "₫";
+    totalProfitEl.innerText = totalProfit.toLocaleString("vi-VN") + "₫";
+    withdrawableEl.innerText = withdrawable.toLocaleString("vi-VN") + "₫";
 }
 
-// Lắng nghe Firebase VIP
-onValue(vipHistoryRef, snap=>{
-  vipHistory = [];
-  snap.forEach(child=>{
-    vipHistory.push(child.val());
-  });
-  renderVIP();
+onValue(vipHistoryRef, snap => {
+    vipHistory = [];
+    snap.forEach(child => vipHistory.push(child.val()));
+    renderVIP();
 });
 
 // ====== NAV ======
@@ -153,7 +170,6 @@ function goHome(){ window.location.href="home.html"; }
 function goHoSo(){ window.location.href="hoso.html"; }
 function goIntro(){ window.location.href="intro.html"; }
 function goCuaToi(){ window.location.href="cuatoi.html"; }
-
 window.goHome = goHome;
 window.goHoSo = goHoSo;
 window.goIntro = goIntro;

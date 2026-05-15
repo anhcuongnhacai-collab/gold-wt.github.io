@@ -63,12 +63,9 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
 <!-- NAVBAR -->
 <nav class="bg-white border-t border-gray-200 absolute bottom-0 w-full flex justify-around py-2">
   <button class="flex flex-col items-center text-black" id="navHome">
-    <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-    </svg>
+    <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
     <span class="text-[10px] font-semibold">Trang chủ</span>
   </button>
-
   <button class="flex flex-col items-center text-gray-400" id="navHoSo">
     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -76,7 +73,6 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
     </svg>
     <span class="text-[10px]">Hồ sơ</span>
   </button>
-
   <button class="flex flex-col items-center text-gray-400" id="navIntro">
     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -84,7 +80,6 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
     </svg>
     <span class="text-[10px]">Giới thiệu</span>
   </button>
-
   <button class="flex flex-col items-center text-gray-400" id="navCuaToi">
     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -97,28 +92,14 @@ body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
 </div>
 
 <script type="module">
-import { db, ref, onValue, set } from "./firebase-config.js";
+import { db, ref, onValue, get, set, push } from "./firebase-config.js";
 
+// Lấy user hiện tại
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if(!currentUser) window.location.href="index.html";
+if(!currentUser.baseMoney) currentUser.baseMoney = 10000;
 
-let balanceEl = document.getElementById("balance");
-
-// Khởi tạo số dư Firebase nếu chưa có
-const userRef = ref(db, `users/${currentUser.phone}`);
-onValue(userRef, snap=>{
-  if(!snap.exists()) set(userRef, { phone: currentUser.phone, money: 10000 });
-});
-
-// Lắng nghe số dư để hiển thị realtime
-let userMoney = 10000;
-onValue(userRef, snap=>{
-  const u = snap.val();
-  userMoney = u?.money || 10000;
-  balanceEl.innerText = userMoney.toLocaleString("vi-VN")+"₫";
-});
-
-// ====== VIP PACKAGES (giữ nguyên 10 gói) ======
+// ====== VIP PACKAGES ======
 const vipPackages = [
 { id:1,name:"GOLD WT-VIP 1",rate:17,duration:80,daily:"8.500",total:"680.000",price:"50.000"},
 { id:2,name:"GOLD WT-VIP 2",rate:17,duration:80,daily:"17.000",total:"1.360.000",price:"100.000"},
@@ -133,43 +114,103 @@ const vipPackages = [
 ];
 
 const container = document.getElementById("vip-packages-container");
+
+// RENDER VIP
 vipPackages.forEach(pkg=>{
-  const imgUrl="https://cdn.phototourl.com/free/2026-05-10-6aa5462c-adeb-4d28-88a4-faad3c335cb4.jpg";
-  container.insertAdjacentHTML("beforeend",`
+const imageUrl="https://cdn.phototourl.com/free/2026-05-10-6aa5462c-adeb-4d28-88a4-faad3c335cb4.jpg";
+container.insertAdjacentHTML("beforeend",`
 <div class="bg-white rounded-xl p-3 shadow-sm flex gap-3">
-  <div class="w-24 h-24 rounded-lg overflow-hidden">
-    <img src="${imgUrl}" class="w-full h-full object-cover">
-  </div>
-  <div class="flex-1">
-    <h3 class="text-xs font-bold mb-1">${pkg.name}</h3>
-    <div class="text-[10px] text-gray-500 space-y-1">
-      <div class="flex justify-between"><span>Lợi nhuận/ngày</span><span>${pkg.rate}%</span></div>
-      <div class="flex justify-between"><span>Chu kỳ</span><span>${pkg.duration} ngày</span></div>
-      <div class="flex justify-between"><span>Ngày</span><span>${pkg.daily} ₫</span></div>
-      <div class="flex justify-between"><span>Tổng</span><span>${pkg.total} ₫</span></div>
-    </div>
-    <div class="flex justify-between items-center mt-2">
-      <span class="text-orange-500 font-bold text-sm">${pkg.price} ₫</span>
-      <button class="buy-btn bg-orange-500 text-white text-[10px] px-3 py-1 rounded-full"
-      data-name="${pkg.name}" data-price="${pkg.price}">Mua ngay</button>
-    </div>
-  </div>
+<div class="w-24 h-24 rounded-lg overflow-hidden">
+<img src="${imageUrl}" class="w-full h-full object-cover">
 </div>
-  `);
+<div class="flex-1">
+<h3 class="text-xs font-bold mb-1">${pkg.name}</h3>
+<div class="text-[10px] text-gray-500 space-y-1">
+<div class="flex justify-between"><span>Lợi nhuận/ngày</span><span>${pkg.rate}%</span></div>
+<div class="flex justify-between"><span>Chu kỳ</span><span>${pkg.duration} ngày</span></div>
+<div class="flex justify-between"><span>Ngày</span><span>${pkg.daily} ₫</span></div>
+<div class="flex justify-between"><span>Tổng</span><span>${pkg.total} ₫</span></div>
+</div>
+<div class="flex justify-between items-center mt-2">
+<span class="text-orange-500 font-bold text-sm">${pkg.price} ₫</span>
+<button class="buy-btn bg-orange-500 text-white text-[10px] px-3 py-1 rounded-full"
+data-name="${pkg.name}" data-price="${pkg.price}">Mua ngay</button>
+</div>
+</div>
+</div>
+`);
 });
 
-// MUA VIP: trừ tiền trực tiếp trên Firebase
-document.addEventListener("click", e=>{
+// ====== ĐỒNG BỘ SỐ DƯ ======
+let totalDeposit=0, totalWithdrawSuccess=0, totalWithdrawPending=0;
+
+function updateBalanceUI(available){
+  document.getElementById("balance").innerText = "₫"+Number(available).toLocaleString("vi-VN");
+}
+
+// Lắng nghe deposits
+onValue(ref(db,"deposits"),snap=>{
+  totalDeposit=0;
+  snap.forEach(d=>{
+    const v=d.val();
+    if(v.phone===currentUser.phone && v.status==="Thành công") totalDeposit+=Number(v.amount);
+  });
+  const available = (currentUser.baseMoney||10000)+totalDeposit-totalWithdrawSuccess-totalWithdrawPending;
+  updateBalanceUI(available);
+});
+
+// Lắng nghe withdraws
+onValue(ref(db,"withdraws"),snap=>{
+  totalWithdrawSuccess=0; totalWithdrawPending=0;
+  snap.forEach(w=>{
+    const v=w.val();
+    if(v.phone===currentUser.phone){
+      if(v.status==="Thành công") totalWithdrawSuccess+=Number(v.amount);
+      else if(v.status==="pending") totalWithdrawPending+=Number(v.amount);
+    }
+  });
+  const available = (currentUser.baseMoney||10000)+totalDeposit-totalWithdrawSuccess-totalWithdrawPending;
+  updateBalanceUI(available);
+});
+
+// ====== MUA VIP ======
+document.addEventListener("click", async e=>{
   if(e.target.classList.contains("buy-btn")){
-    let price = Number(e.target.dataset.price.replace(/\./g,""));
-    if(price>userMoney){ alert("Số dư không đủ!"); return; }
-    userMoney -= price;
-    set(userRef, { phone: currentUser.phone, money: userMoney });
-    alert("Mua thành công "+e.target.dataset.name);
+    const name = e.target.dataset.name;
+    const price = Number(e.target.dataset.price.replace(/\./g,""));
+
+    const userRef = ref(db, `users/${currentUser.phone}`);
+    const snapshot = await get(userRef);
+    const userData = snapshot.val() || {};
+    const available = (userData.baseMoney || 10000) + totalDeposit - totalWithdrawSuccess - totalWithdrawPending;
+
+    if(price > available){
+      alert("Số dư không đủ!");
+      return;
+    }
+
+    // Trừ tiền
+    await set(userRef, { ...userData, baseMoney: available - price });
+    updateBalanceUI(available - price);
+
+    // Thêm VIP
+    const vipRef = ref(db, 'vipHistory');
+    const vipData = {
+      phone: currentUser.phone,
+      name,
+      price,
+      dailyProfit: price * 0.17,
+      duration: 80,
+      startTime: Date.now(),
+      lastClaim: Date.now()
+    };
+    await push(vipRef, vipData);
+
+    alert("Mua thành công "+name);
   }
 });
 
-// NAV
+// ====== NAVIGATION ======
 document.getElementById("logoHome").onclick = ()=>goHome();
 document.getElementById("btnDeposit").onclick = ()=>goDeposit();
 document.getElementById("btnWithdraw").onclick = ()=>goWithdraw();
