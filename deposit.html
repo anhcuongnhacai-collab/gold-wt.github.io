@@ -4,14 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nạp tiền</title>
-
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-/* =========================
-   GIỮ NGUYÊN STYLE CỦA BẠN
-========================= */
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
 body{background:#fff3e6;display:flex;justify-content:center;}
 .container{width:420px;max-width:100%;min-height:100vh;background:#fff3e6;}
@@ -29,14 +23,12 @@ body{background:#fff3e6;display:flex;justify-content:center;}
 .btn:hover{opacity:0.9;}
 </style>
 </head>
-
 <body>
 
 <div class="container">
 
     <div class="header">
-        <i class="fa-solid fa-arrow-left back"
-           onclick="window.location.href='cuatoi.html'"></i>
+        <i class="fa-solid fa-arrow-left back" onclick="window.location.href='cuatoi.html'"></i>
         Nạp tiền
     </div>
 
@@ -45,16 +37,11 @@ body{background:#fff3e6;display:flex;justify-content:center;}
         <h3>Chọn phương thức</h3>
 
         <div class="methods">
-            <div class="method active"
-                 id="qr"
-                 onclick="setMethod('QR')">
+            <div class="method active" id="qr" onclick="setMethod('QR')">
                 <i class="fa-solid fa-qrcode"></i>
                 <div>QR</div>
             </div>
-
-            <div class="method"
-                 id="momo"
-                 onclick="setMethod('MOMO')">
+            <div class="method" id="momo" onclick="setMethod('MOMO')">
                 <i class="fa-solid fa-wallet"></i>
                 <div>MoMo</div>
             </div>
@@ -73,51 +60,39 @@ body{background:#fff3e6;display:flex;justify-content:center;}
 
     </div>
 
-    <button class="btn" onclick="submitDeposit()">
-        Xác nhận nạp tiền
-    </button>
+    <button class="btn" onclick="submitDeposit()">Xác nhận nạp tiền</button>
 
 </div>
 
 <script type="module">
-// ====== SỬA IMPORT ĐÚNG ======
-import { db } from "./firebase-config.js"; // giữ nguyên tên file firebase-config.js cùng thư mục
-import { ref, push } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+import { db, ref, push } from "./firebase-config.js";
 
-/* =========================
-   BIẾN TOÀN CỤC
-========================= */
 let method = "QR";
 let money = 0;
 
-/* =========================
-   CHỌN PHƯƠNG THỨC
-========================= */
 window.setMethod = function(m){
     method = m;
     document.getElementById("qr").classList.remove("active");
     document.getElementById("momo").classList.remove("active");
-    if(m === "QR"){ document.getElementById("qr").classList.add("active"); }
-    else { document.getElementById("momo").classList.add("active"); }
+    if(m==="QR") document.getElementById("qr").classList.add("active");
+    else document.getElementById("momo").classList.add("active");
 }
 
-/* =========================
-   CHỌN SỐ TIỀN
-========================= */
 window.setMoney = function(m, e){
     money = m;
-    document.querySelectorAll(".amount").forEach(item => { item.classList.remove("active"); });
+    document.querySelectorAll(".amount").forEach(a=>a.classList.remove("active"));
     e.target.classList.add("active");
 }
 
-/* =========================
-   XÁC NHẬN NẠP TIỀN
-========================= */
 window.submitDeposit = function(){
     if(money < 50000){ alert("Tối thiểu 50.000đ"); return; }
-    let currentUser = JSON.parse(localStorage.getItem("currentUser"));
-    if(!currentUser){ alert("Vui lòng đăng nhập lại!"); window.location.href = "index.html"; return; }
 
+    let currentUser = JSON.parse(localStorage.getItem("currentUser")) || {
+        phone: "0987654321",
+        username: "user01"
+    };
+
+    // Lưu local history (giữ nguyên)
     let history = JSON.parse(localStorage.getItem("history")) || [];
     history.push({
         id: Date.now(),
@@ -132,7 +107,6 @@ window.submitDeposit = function(){
         time: new Date().toLocaleString("vi-VN"),
         status: "pending"
     });
-
     localStorage.setItem("history", JSON.stringify(history));
 
     // ====== LƯU FIREBASE ======
@@ -150,7 +124,7 @@ window.submitDeposit = function(){
         status: "pending"
     });
 
-    let link = method === "QR" ? "images/qr.jpg?" + money : "momo.html";
+    let link = method==="QR" ? "images/qr.jpg?" + money : "momo.html";
 
     let box = document.createElement("div");
     box.innerHTML = `
