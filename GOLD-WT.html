@@ -104,7 +104,7 @@
                 <div class="absolute inset-0 gold-gradient blur-3xl opacity-20 animate-pulse"></div>
                 <div class="w-32 h-32 rounded-3xl gold-gradient p-[2px] rotate-12">
                     <div class="w-full h-full bg-[#161B2D] rounded-[22px] flex items-center justify-center -rotate-12 overflow-hidden border border-yellow-500/30">
-                        <img src="logo.jpg" alt="GOLD WT" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/128x128/161B2D/F59E0B?text=GOLD'">
+                        <img src="images/logo.png" alt="GOLD WT" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/128x128/161B2D/F59E0B?text=GOLD'">
                     </div>
                 </div>
             </div>
@@ -346,7 +346,7 @@
                         <button onclick="copyRefLink()" class="text-yellow-500 text-lg"><i class="fa-regular fa-copy"></i></button>
                     </div>
                     
-                    <p class="text-[10px] text-gray-500 italic">Nhận 24.000đ khi F1 mua gói & Hoa hồng từ thu nhập VIP.</p>
+                    <p class="text-[10px] text-gray-500 italic">Hoa hồng đại lý được cộng trực tiếp vào số dư lúc 00:00 mỗi ngày.</p>
                 </div>
 
                 <h3 class="text-lg font-black text-white mb-4 uppercase text-center">Thống kê F1</h3>
@@ -357,7 +357,7 @@
             <div id="tab-profile" class="tab-content p-5 hidden animate-fade">
                 <div class="flex items-center gap-4 mb-6 px-2">
                     <div class="w-16 h-16 rounded-full gold-gradient p-1 shadow-[0_5px_15px_rgba(245,158,11,0.3)]">
-                        <img src="logo.jpg" alt="Profile" class="w-full h-full rounded-full object-cover" onerror="this.src='https://placehold.co/128x128/161B2D/F59E0B?text=U'">
+                        <img src="images/logo.png" alt="Profile" class="w-full h-full rounded-full object-cover" onerror="this.src='https://placehold.co/128x128/161B2D/F59E0B?text=U'">
                     </div>
                     <div>
                         <p class="text-xs text-yellow-500 font-bold uppercase tracking-widest">Xin chào,</p>
@@ -884,6 +884,67 @@
 
         window.logout = () => { localStorage.removeItem('gold_wt_user'); location.reload(); };
 
+        // Xử lý cộng hoa hồng tự động 00:00 hằng ngày
+        window.checkDailyCommission = async () => {
+            if (!currentUser || !currentUser.username) return;
+            
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            
+            // Nếu lần đầu thì thiết lập ngày hiện tại
+            if (!currentUser.lastCommissionDate) {
+                await update(ref(db, `users/${currentUser.username}`), { lastCommissionDate: todayStr });
+                return;
+            }
+
+            // Đã nhận hoa hồng ngày hôm nay
+            if (currentUser.lastCommissionDate === todayStr) return;
+
+            const lastDate = new Date(currentUser.lastCommissionDate);
+            lastDate.setHours(0,0,0,0);
+            const todayDate = new Date(todayStr);
+            todayDate.setHours(0,0,0,0);
+            
+            const diffTime = Math.abs(todayDate - lastDate);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+            // Nếu đã sang ngày mới (diffDays > 0)
+            if (diffDays > 0) {
+                let dailyCommission = 0;
+                const aff = currentUser.affiliates || {};
+                
+                // Tính toán tổng hoa hồng 1 ngày từ tất cả F1
+                VIP_PACKAGES.forEach(p => {
+                    if (aff[p.id] && aff[p.id].count > 0) {
+                        let rate = 0.25; // VIP 1 -> 5 là 25%
+                        if (p.id === 'vip6') rate = 0.23;
+                        else if (p.id === 'vip7') rate = 0.18;
+                        else if (p.id === 'vip8') rate = 0.15;
+                        
+                        const dailyProfit = p.price * LAI_SUAT;
+                        dailyCommission += aff[p.id].count * dailyProfit * rate;
+                    }
+                });
+
+                if (dailyCommission > 0) {
+                    const totalCommissionToAdd = dailyCommission * diffDays;
+                    await update(ref(db, `users/${currentUser.username}`), {
+                        balance: (currentUser.balance || 0) + totalCommissionToAdd,
+                        lastCommissionDate: todayStr
+                    });
+                    
+                    await push(ref(db, `users/${currentUser.username}/notifications`), {
+                        msg: `Bạn đã nhận ${formatVND(totalCommissionToAdd)} hoa hồng đại lý tự động cho ${diffDays} ngày qua.`,
+                        time: Date.now(),
+                        read: false
+                    });
+                    showToast(`Tự động cộng ${formatVND(totalCommissionToAdd)} hoa hồng đại lý!`);
+                } else {
+                    await update(ref(db, `users/${currentUser.username}`), { lastCommissionDate: todayStr });
+                }
+            }
+        };
+
         const initApp = (username) => {
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('main-content').classList.remove('hidden');
@@ -898,10 +959,15 @@
                     if(!currentUser.affiliates) currentUser.affiliates = {};
                     updateUI();
                     renderNotifications();
+                    // Gọi hàm check hoa hồng khi data load
+                    window.checkDailyCommission();
                 }
             });
             renderPackages();
             initLuckyGame(); 
+
+            // Cứ mỗi 60 giây kiểm tra xem đã qua 00:00 chưa để cộng
+            setInterval(window.checkDailyCommission, 60000);
         };
 
         const updateUI = () => {
@@ -987,7 +1053,7 @@
                 <div class="glass-card p-6 rounded-[2.5rem]">
                     <div class="flex items-center gap-4 mb-4">
                         <div class="w-14 h-14 rounded-2xl gold-gradient p-[2px] shadow-xl overflow-hidden flex-shrink-0">
-                            <img src="logo.jpg" class="w-full h-full object-cover rounded-[14px]" onerror="this.src='https://placehold.co/128x128/161B2D/F59E0B?text=V'" alt="${p.name}">
+                            <img src="images/logo.png" class="w-full h-full object-cover rounded-[14px]" onerror="this.src='https://placehold.co/128x128/161B2D/F59E0B?text=V'" alt="${p.name}">
                         </div>
                         <div>
                             <h4 class="text-xl font-black text-white">${p.name}</h4>
@@ -1029,9 +1095,8 @@
                         updates[`affiliates/vip0/count`] = refData.affiliates.vip0.count - 1;
                     }
 
-                    updates['balance'] = (refData.balance || 0) + 24000;
+                    // Tăng số lượng F1 sở hữu gói VIP này
                     updates[`affiliates/${id}/count`] = (refData.affiliates?.[id]?.count || 0) + 1;
-                    updates[`affiliates/${id}/commission`] = (refData.affiliates?.[id]?.commission || 0) + 24000;
 
                     await update(ref(db, `users/${refUser}`), updates);
 
@@ -1040,8 +1105,11 @@
                     else if (id === 'vip7') hoaHongPct = 18;
                     else if (id === 'vip8') hoaHongPct = 15;
                     
+                    const dailyProfit = pkg.price * LAI_SUAT;
+                    const dailyComm = dailyProfit * (hoaHongPct / 100);
+
                     await push(ref(db, `users/${refUser}/notifications`), {
-                        msg: `Người dùng ${currentUser.username} đã mua gói ${pkg.name}, bạn nhận được 24.000đ và ${hoaHongPct}% hoa hồng từ thu nhập hàng ngày của gói này.`,
+                        msg: `Người dùng ${currentUser.username} đã mua ${pkg.name}. Bạn sẽ tự động nhận thêm ${formatVND(dailyComm)} hoa hồng vào 00h mỗi ngày.`,
                         time: Date.now(),
                         read: false
                     });
@@ -1130,14 +1198,22 @@
             `;
             
             VIP_PACKAGES.forEach(p => {
-                const data = aff[p.id] || { count: 0, commission: 0 };
+                const data = aff[p.id] || { count: 0 };
+                let rate = 0.25;
+                if (p.id === 'vip6') rate = 0.23;
+                else if (p.id === 'vip7') rate = 0.18;
+                else if (p.id === 'vip8') rate = 0.15;
+                
+                const dailyProfit = p.price * LAI_SUAT;
+                const dailyComm = data.count * dailyProfit * rate; // N người x Hoa hồng 1 ngày
+
                 html += `
                     <div class="glass-card p-4 rounded-2xl border border-yellow-500/20">
                         <p class="font-black text-yellow-500 mb-2 text-sm uppercase">${p.name}</p>
                         <p class="text-[10px] text-gray-400 mb-1">Số gói F1 mua:</p>
                         <p class="text-sm text-white font-bold mb-2">${data.count} gói</p>
-                        <p class="text-[10px] text-gray-400 mb-1">Hoa hồng thu được:</p>
-                        <p class="text-sm text-green-400 font-bold">${formatVND(data.commission)}</p>
+                        <p class="text-[10px] text-gray-400 mb-1">Hoa hồng mỗi ngày:</p>
+                        <p class="text-sm text-green-400 font-bold">${formatVND(dailyComm)}</p>
                     </div>
                 `;
             });
@@ -1149,31 +1225,7 @@
                 balance: (currentUser.balance || 0) + amount,
                 [`investments/${invId}/claimedTotal`]: (inv.claimedTotal || 0) + amount
             });
-
-            if (currentUser.referredBy) {
-                const refUser = currentUser.referredBy;
-                const refSnap = await get(ref(db, 'users/' + refUser));
-                if (refSnap.exists()) {
-                    const refData = refSnap.val();
-                    let hoaHongPct = 25; 
-                    if (inv.pkgId === 'vip6') hoaHongPct = 23;
-                    else if (inv.pkgId === 'vip7') hoaHongPct = 18;
-                    else if (inv.pkgId === 'vip8') hoaHongPct = 15;
-
-                    const commAmount = amount * (hoaHongPct / 100);
-                    
-                    await update(ref(db, `users/${refUser}`), {
-                        balance: (refData.balance || 0) + commAmount,
-                        [`affiliates/${inv.pkgId}/commission`]: (refData.affiliates?.[inv.pkgId]?.commission || 0) + commAmount
-                    });
-                    
-                    await push(ref(db, `users/${refUser}/notifications`), {
-                        msg: `Bạn nhận được ${formatVND(commAmount)} hoa hồng (${hoaHongPct}%) từ lợi nhuận gói ${inv.name} của F1 ${currentUser.username}.`,
-                        time: Date.now(),
-                        read: false
-                    });
-                }
-            }
+            // (Hoa hồng không cộng ở đây nữa mà sẽ được tự động cộng lúc 00h)
         };
 
         window.claimEarning = async (id) => {
@@ -1524,7 +1576,7 @@
             
             if (selectedPayMethod === 'qr') {
                 // TODO: BẠN THAY LINK QR NGÂN HÀNG CỦA BẠN VÀO BÊN DƯỚI
-                qrImg.src = "QR_NGAN_HANG_CUA_BAN.jpg"; 
+                qrImg.src = "images/qr-bank.jpg"; 
                 // Nếu chưa có ảnh, tạm dùng link giả lập này: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=Techcombank_Info"
 
                 bankLabel.innerText = "Ngân hàng";
@@ -1533,12 +1585,12 @@
                 accName.innerText = "NGUYEN MANH CUONG";
             } else if (selectedPayMethod === 'momo') {
                 // TODO: BẠN THAY LINK QR MOMO CỦA BẠN VÀO BÊN DƯỚI
-                qrImg.src = "QR_MOMO_CUA_BAN.jpg"; 
+                qrImg.src = "images/qr-momo.jpg"; 
                 // Nếu chưa có ảnh, tạm dùng link giả lập này: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=MoMo_Info"
 
                 bankLabel.innerText = "Ví điện tử";
                 bankName.innerText = "MOMO";
-                accNum.innerText = "0393 030 722";
+                accNum.innerText = "*** *** 722";
                 accName.innerText = "NGUYEN MANH CUONG";
             }
             
