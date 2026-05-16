@@ -94,9 +94,9 @@
         }
     </style>
 </head>
-<body class="antialiased h-screen w-screen overflow-hidden flex justify-center">
+<body class="antialiased h-[100dvh] w-screen overflow-hidden flex justify-center">
 
-    <div id="app" class="w-full max-w-md h-full relative flex flex-col bg-[#0B0F1A] shadow-2xl overflow-hidden">
+    <div id="app" class="w-full max-w-md h-[100dvh] relative flex flex-col bg-[#0B0F1A] shadow-2xl overflow-hidden">
         
         <!-- Màn hình Auth -->
         <div id="auth-screen" class="absolute inset-0 z-50 bg-[#0B0F1A] flex flex-col items-center justify-center p-8 overflow-y-auto transition-all duration-500">
@@ -195,7 +195,8 @@
         </div>
 
         <!-- Nội dung chính App -->
-        <div id="main-content" class="flex-1 overflow-y-auto pb-24 hidden bg-[#0B0F1A]">
+        <!-- Sửa pb-24 thành pb-28 để nội dung dưới cùng không bị che bởi thanh menu khi vuốt -->
+        <div id="main-content" class="flex-1 overflow-y-auto pb-28 hidden bg-[#0B0F1A]">
             <!-- Header -->
             <div class="glass-card sticky top-0 z-40 px-5 py-4 flex justify-between items-center rounded-b-[2rem]">
                 <div class="flex items-center gap-3">
@@ -347,6 +348,10 @@
                     </div>
                     
                     <p class="text-[10px] text-gray-500 italic">Hoa hồng đại lý được cộng trực tiếp vào số dư lúc 00:00 mỗi ngày.</p>
+                    
+                    <div class="mt-4 p-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                        <p class="text-[11px] text-yellow-500 font-bold">🎁 Thưởng nóng ngay 20.000đ khi cấp dưới (F1) mua gói VIP bất kỳ!</p>
+                    </div>
                 </div>
 
                 <h3 class="text-lg font-black text-white mb-4 uppercase text-center">Thống kê F1</h3>
@@ -569,7 +574,7 @@
 
                 <!-- Form Nhập Ngân Hàng -->
                 <div id="bank-form-area">
-                    <p class="text-xs text-yellow-500 italic mb-4">* Vui lòng điền thông tin chính xác. Có thể chỉnh sửa sau khi liên kết nếu cần thiết.</p>
+                    <p class="text-xs text-yellow-500 italic mb-4">* Vui lòng điền thông cấu chính xác. Có thể chỉnh sửa sau khi liên kết nếu cần thiết.</p>
                     
                     <div class="space-y-4 mb-6">
                         <div>
@@ -1083,6 +1088,7 @@
                 investments: newInvest
             });
 
+            // Logic cập nhật số liệu cho người giới thiệu và cộng 20k tiền thưởng nóng
             if (currentUser.referredBy) {
                 const refUser = currentUser.referredBy;
                 const refSnap = await get(ref(db, 'users/' + refUser));
@@ -1091,9 +1097,14 @@
                     const refData = refSnap.val();
                     let updates = {};
                     
+                    // Giảm số lượng VIP 0 nếu là lần mua đầu tiên
                     if (isFirstPurchase && refData.affiliates?.vip0?.count > 0) {
                         updates[`affiliates/vip0/count`] = refData.affiliates.vip0.count - 1;
                     }
+                    
+                    // Thưởng 20.000đ mỗi khi F1 mua gói VIP bất kỳ
+                    updates['balance'] = (refData.balance || 0) + 20000;
+                    let directBonusMsg = " Bạn cũng được thưởng nóng 20.000đ vào tài khoản.";
 
                     // Tăng số lượng F1 sở hữu gói VIP này
                     updates[`affiliates/${id}/count`] = (refData.affiliates?.[id]?.count || 0) + 1;
@@ -1109,7 +1120,7 @@
                     const dailyComm = dailyProfit * (hoaHongPct / 100);
 
                     await push(ref(db, `users/${refUser}/notifications`), {
-                        msg: `Người dùng ${currentUser.username} đã mua ${pkg.name}. Bạn sẽ tự động nhận thêm ${formatVND(dailyComm)} hoa hồng vào 00h mỗi ngày.`,
+                        msg: `Người dùng ${currentUser.username} đã mua ${pkg.name}.${directBonusMsg} Bạn sẽ tự động nhận thêm ${formatVND(dailyComm)} hoa hồng vào 00h mỗi ngày.`,
                         time: Date.now(),
                         read: false
                     });
