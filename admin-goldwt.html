@@ -367,9 +367,10 @@
                 }
 
                 let actionHtml = '';
+                // Truyền object nguyên bản dưới dạng chuỗi an toàn
+                const txDataStr = encodeURIComponent(JSON.stringify(tx));
+                
                 if (tx.status === 'pending') {
-                    // Truyền object nguyên bản dưới dạng chuỗi an toàn
-                    const txDataStr = encodeURIComponent(JSON.stringify(tx));
                     actionHtml = `
                         <div class="flex gap-2 justify-end">
                             <button onclick="openActionModal('approve', '${txDataStr}')" title="Duyệt" class="w-8 h-8 rounded-lg bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white transition-colors flex items-center justify-center">
@@ -377,6 +378,15 @@
                             </button>
                             <button onclick="openActionModal('reject', '${txDataStr}')" title="Từ chối" class="w-8 h-8 rounded-lg bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center">
                                 <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    // THÊM NÚT SỬA LỖI/HOÀN TÁC CHO GIAO DỊCH ĐÃ XỬ LÝ
+                    actionHtml = `
+                        <div class="flex gap-2 justify-end">
+                            <button onclick="openActionModal('undo', '${txDataStr}')" title="Sửa đổi / Khôi phục về Đang Chờ" class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white transition-colors flex items-center justify-center">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
                             </button>
                         </div>
                     `;
@@ -399,7 +409,7 @@
             }).join('');
         };
 
-        // --- XỬ LÝ DUYỆT / TỪ CHỐI ---
+        // --- XỬ LÝ DUYỆT / TỪ CHỐI / HOÀN TÁC ---
         let currentTxTarget = null;
         let currentAction = null;
 
@@ -432,8 +442,8 @@
                 document.getElementById('modal-message').innerHTML = msg;
                 btn.className = "flex-1 font-bold py-3 rounded-xl transition-colors bg-green-500 text-white hover:bg-green-600 shadow-[0_0_15px_rgba(16,185,129,0.3)]";
                 btn.innerText = "Xác nhận Duyệt";
-                btn.onclick = executeAction;
-            } else {
+                
+            } else if (action === 'reject') {
                 document.getElementById('modal-title').innerText = "Từ Chối Giao Dịch";
                 document.getElementById('modal-title').className = "text-xl font-black text-red-500";
                 
@@ -443,9 +453,20 @@
                 document.getElementById('modal-message').innerHTML = msg;
                 btn.className = "flex-1 font-bold py-3 rounded-xl transition-colors bg-red-500 text-white hover:bg-red-600 shadow-[0_0_15px_rgba(239,68,68,0.3)]";
                 btn.innerText = "Xác nhận Từ chối";
-                btn.onclick = executeAction;
+                
+            } else if (action === 'undo') {
+                // PHẦN LOGIC GIAO DIỆN CỦA NÚT SỬA/HOÀN TÁC
+                document.getElementById('modal-title').innerText = "Sửa Lỗi / Hoàn Tác";
+                document.getElementById('modal-title').className = "text-xl font-black text-blue-500";
+                
+                let msg = `Bạn đang thao tác sửa một giao dịch đã xử lý. Hệ thống sẽ khôi phục giao dịch này về <b>Đang chờ</b> và hoàn trả/thu hồi số dư của khách để bạn có thể xét duyệt lại từ đầu.`;
+                
+                document.getElementById('modal-message').innerHTML = msg;
+                btn.className = "flex-1 font-bold py-3 rounded-xl transition-colors bg-blue-500 text-white hover:bg-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.3)]";
+                btn.innerText = "Khôi phục lại";
             }
 
+            btn.onclick = executeAction;
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         };
@@ -496,6 +517,25 @@
                         notifMsg = `Lệnh nạp ${formatVND(tx.amount)} (ID: ${tx.id}) đã bị từ chối. Nếu có thắc mắc vui lòng liên hệ CSKH.`;
                     }
                 }
+                else if (action === 'undo') {
+                    // LOGIC KHI HOÀN TÁC SỬA LỖI
+                    updates[`users/${tx.username}/transactions/${tx.firebaseKey}/status`] = 'pending';
+
+                    if (tx.status === 'success' && tx.type === 'deposit') {
+                        // Nếu lỡ Duyệt nạp tiền nhầm: Phải trừ lại tiền đã cộng
+                        updates[`users/${tx.username}/balance`] = currentBalance - tx.amount;
+                        notifMsg = `Giao dịch nạp tiền ${formatVND(tx.amount)} (ID: ${tx.id}) đang được Admin xem xét lại. Số dư đã được điều chỉnh.`;
+                    } 
+                    else if (tx.status === 'failed' && tx.type === 'withdraw') {
+                        // Nếu lỡ Từ chối rút tiền nhầm (đã hoàn tiền): Phải trừ lại tiền hoàn đó
+                        updates[`users/${tx.username}/balance`] = currentBalance - tx.amount;
+                        notifMsg = `Lệnh rút tiền ${formatVND(tx.amount)} (ID: ${tx.id}) đang được Admin xét duyệt lại.`;
+                    }
+                    else {
+                        // Các trường hợp khác (Từ chối nạp, Duyệt rút) không ảnh hưởng số dư, chỉ đổi trạng thái
+                        notifMsg = `Giao dịch (ID: ${tx.id}) đang được Admin xem xét lại trạng thái.`;
+                    }
+                }
 
                 // Gửi thông báo
                 const notifRef = push(ref(db, `users/${tx.username}/notifications`));
@@ -508,7 +548,8 @@
                 // Đẩy lên Firebase
                 await update(ref(db), updates);
 
-                showToast(`Đã ${action === 'approve' ? 'DUYỆT' : 'TỪ CHỐI'} giao dịch thành công!`);
+                let successText = action === 'approve' ? 'DUYỆT' : (action === 'reject' ? 'TỪ CHỐI' : 'KHÔI PHỤC');
+                showToast(`Đã ${successText} giao dịch thành công!`);
                 closeModal();
                 loadData(); // Tải lại bảng
 
