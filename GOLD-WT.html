@@ -1556,7 +1556,7 @@
 
         window.confirmWithdraw = async () => {
             const amount = parseInt(document.getElementById('withdraw-amount').value);
-            if (!amount || amount < 100000) return showToast('Số tiền rút tối thiểu là 100.000đ');
+            if (!amount || amount < 50000) return showToast('Số tiền rút tối thiểu là 50.000đ');
             if (amount > currentUser.balance) return showToast('Số dư khả dụng không đủ');
 
             await update(ref(db, `users/${currentUser.username}`), { 
