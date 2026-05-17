@@ -98,6 +98,7 @@
 
     <div id="app" class="w-full max-w-md h-[100dvh] relative flex flex-col bg-[#0B0F1A] shadow-2xl overflow-hidden">
         
+        <!-- Màn hình Auth -->
         <div id="auth-screen" class="absolute inset-0 z-50 bg-[#0B0F1A] flex flex-col items-center justify-center p-8 overflow-y-auto transition-all duration-500">
             <div class="relative mb-8">
                 <div class="absolute inset-0 gold-gradient blur-3xl opacity-20 animate-pulse"></div>
@@ -111,6 +112,7 @@
             <h1 class="text-4xl font-extrabold gold-text tracking-tighter mb-2">GOLD WT</h1>
             <p class="text-gray-400 mb-10 text-center text-sm font-medium">Nền tảng đầu tư an toàn đáng tin cậy</p>
 
+            <!-- FORM ĐĂNG NHẬP -->
             <div id="form-login" class="w-full space-y-5 animate-fade">
                 <div class="space-y-4">
                     <div class="group relative">
@@ -136,6 +138,7 @@
                 </div>
             </div>
 
+            <!-- FORM ĐĂNG KÝ -->
             <div id="form-register" class="w-full space-y-4 hidden animate-fade">
                 <div class="space-y-3">
                     <input type="tel" id="reg-phone" placeholder="Số điện thoại" class="w-full bg-[#161B2D] text-white rounded-xl py-3.5 px-5 outline-none border border-gray-800 focus:border-yellow-500/50">
@@ -158,6 +161,7 @@
                 <button onclick="switchAuthForm('login')" class="w-full text-gray-500 text-sm font-bold">QUAY LẠI ĐĂNG NHẬP</button>
             </div>
 
+            <!-- FORM QUÊN MẬT KHẨU -->
             <div id="form-forgot" class="w-full space-y-4 hidden animate-fade">
                 <div class="space-y-3">
                     <p class="text-xs text-gray-400 text-center mb-4">Vui lòng nhập thông tin để khôi phục mật khẩu</p>
@@ -172,6 +176,7 @@
                 <button onclick="switchAuthForm('login')" class="w-full text-gray-500 text-sm font-bold">QUAY LẠI ĐĂNG NHẬP</button>
             </div>
 
+            <!-- FORM ĐẶT LẠI MẬT KHẨU MỚI -->
             <div id="form-reset" class="w-full space-y-4 hidden animate-fade">
                 <div class="space-y-3">
                     <p class="text-xs text-green-400 text-center mb-4">Xác thực thành công, mời nhập mật khẩu mới</p>
@@ -189,7 +194,10 @@
             </div>
         </div>
 
+        <!-- Nội dung chính App -->
+        <!-- Sửa pb-24 thành pb-28 để nội dung dưới cùng không bị che bởi thanh menu khi vuốt -->
         <div id="main-content" class="flex-1 overflow-y-auto pb-28 hidden bg-[#0B0F1A]">
+            <!-- Header -->
             <div class="glass-card sticky top-0 z-40 px-5 py-4 flex justify-between items-center rounded-b-[2rem]">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center text-gray-900 shadow-lg">
@@ -209,6 +217,7 @@
                 </div>
             </div>
 
+            <!-- Tab Trang chủ -->
             <div id="tab-home" class="tab-content p-5 space-y-8 animate-fade">
                 <div class="relative p-6 rounded-[2.5rem] gold-gradient shadow-[0_15px_40px_rgba(217,119,6,0.2)]">
                     <div class="flex justify-between items-start mb-6">
@@ -230,6 +239,7 @@
                 </div>
             </div>
 
+            <!-- Tab Gói VIP -->
             <div id="tab-vip" class="tab-content p-5 hidden animate-fade">
                 <h2 class="text-2xl font-black text-center mb-6 gold-text uppercase">Gói của tôi</h2>
                 <div class="grid grid-cols-2 gap-3 mb-4">
@@ -258,6 +268,7 @@
                 <div id="my-investments-container" class="space-y-4"></div>
             </div>
 
+            <!-- Tab Kiếm thêm (Dự đoán may mắn) -->
             <div id="tab-games" class="tab-content p-5 hidden animate-fade">
                 <div class="flex justify-between items-center mb-4 relative">
                     <h2 class="text-xl font-black text-center gold-text uppercase">DỰ ĐOÁN MAY MẮN</h2>
@@ -320,6 +331,7 @@
                 </div>
             </div>
 
+            <!-- Tab Đội nhóm -->
             <div id="tab-ref" class="tab-content p-5 hidden animate-fade">
                 <h2 class="text-2xl font-black text-center mb-6 gold-text">HỆ THỐNG ĐẠI LÝ</h2>
                 <div class="glass-card p-6 rounded-[2.5rem] mb-6 text-center">
@@ -346,6 +358,7 @@
                 <div class="grid grid-cols-2 gap-3" id="ref-stats-container"></div>
             </div>
 
+            <!-- Tab Cá nhân -->
             <div id="tab-profile" class="tab-content p-5 hidden animate-fade">
                 <div class="flex items-center gap-4 mb-6 px-2">
                     <div class="w-16 h-16 rounded-full gold-gradient p-1 shadow-[0_5px_15px_rgba(245,158,11,0.3)]">
@@ -414,6 +427,7 @@
             </div>
         </div>
 
+        <!-- Thanh Navbar dưới -->
         <div id="bottom-nav" class="absolute bottom-0 w-full glass-card border-t border-yellow-500/10 rounded-t-[2.5rem] flex justify-around items-center py-4 px-2 z-40 hidden">
             <button onclick="switchTab('home')" class="nav-item flex flex-col items-center gap-1 w-1/5 transition-all nav-active" data-tab="home">
                 <i class="fa-solid fa-house text-lg"></i>
@@ -439,8 +453,10 @@
             </button>
         </div>
 
+        <!-- Toast -->
         <div id="toast" class="absolute top-10 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full glass-card border-yellow-500 text-white text-xs font-bold opacity-0 transition-all pointer-events-none shadow-2xl">---</div>
         
+        <!-- Modal Chọn Phương Thức Nạp Tiền -->
         <div id="deposit-modal" class="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm hidden flex-col justify-end">
             <div class="glass-card w-full rounded-t-[3rem] p-8 animate-fade">
                 <div class="flex justify-between items-center mb-6">
@@ -467,6 +483,7 @@
             </div>
         </div>
 
+        <!-- Modal Hiển Thị Thông Tin Chuyển Khoản (Mới) -->
         <div id="payment-info-modal" class="absolute inset-0 z-[70] bg-black/90 backdrop-blur-md hidden flex-col justify-center items-center p-5">
             <div class="glass-card w-full max-w-sm rounded-[2rem] p-6 animate-fade">
                 <div class="flex justify-between items-center mb-4">
@@ -475,6 +492,7 @@
                 </div>
                 
                 <div class="text-center mb-4">
+                    <!-- Ảnh QR Code -->
                     <div class="bg-white p-2 rounded-xl inline-block mb-2">
                         <img id="pay-info-qr" src="" alt="QR Code" class="w-40 h-40 object-cover">
                     </div>
@@ -519,6 +537,7 @@
             </div>
         </div>
 
+        <!-- Modal Rút Tiền -->
         <div id="withdraw-modal" class="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm hidden flex-col justify-end">
             <div class="glass-card w-full rounded-t-[3rem] p-8 animate-fade">
                 <div class="flex justify-between items-center mb-6">
@@ -545,6 +564,7 @@
             </div>
         </div>
 
+        <!-- Modal Thông Tin Ngân Hàng -->
         <div id="bank-modal" class="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm hidden flex-col justify-end">
             <div class="glass-card w-full rounded-t-[3rem] p-8 animate-fade max-h-[90%] overflow-y-auto">
                 <div class="flex justify-between items-center mb-6">
@@ -552,6 +572,7 @@
                     <i class="fa-solid fa-xmark text-2xl text-gray-500 cursor-pointer" onclick="closeModal('bank-modal')"></i>
                 </div>
 
+                <!-- Form Nhập Ngân Hàng -->
                 <div id="bank-form-area">
                     <p class="text-xs text-yellow-500 italic mb-4">* Vui lòng điền thông cấu chính xác. Có thể chỉnh sửa sau khi liên kết nếu cần thiết.</p>
                     
@@ -600,6 +621,7 @@
                     <button onclick="saveBankInfo()" class="w-full gold-gradient text-gray-900 font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-transform">LIÊN KẾT NGAY</button>
                 </div>
 
+                <!-- Hiển thị khi ĐÃ LIÊN KẾT -->
                 <div id="bank-linked-area" class="hidden">
                     <div class="bg-green-500/10 border border-green-500/30 rounded-2xl p-6 text-center mb-6">
                         <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-green-500 text-3xl">
@@ -624,6 +646,7 @@
                         </div>
                     </div>
 
+                    <!-- Thêm nút Chỉnh Sửa ở đây -->
                     <button onclick="editBankInfo()" class="w-full bg-gray-800 text-white font-bold py-4 rounded-2xl shadow-xl active:scale-95 transition-transform flex justify-center items-center gap-2">
                         <i class="fa-solid fa-pen-to-square"></i> CHỈNH SỬA THÔNG TIN
                     </button>
@@ -631,6 +654,7 @@
             </div>
         </div>
 
+        <!-- Modal Lịch Sử Nạp Rút -->
         <div id="history-modal" class="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm hidden flex-col justify-end">
             <div class="glass-card w-full rounded-t-[3rem] p-6 animate-fade max-h-[85%] flex flex-col">
                 <div class="flex justify-between items-center mb-6 px-2">
@@ -641,6 +665,7 @@
             </div>
         </div>
 
+        <!-- Modal Thông Báo -->
         <div id="notif-modal" class="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm hidden flex-col justify-end">
             <div class="glass-card w-full rounded-t-[3rem] p-6 animate-fade max-h-[80%] flex flex-col">
                 <div class="flex justify-between items-center mb-6">
@@ -651,6 +676,7 @@
             </div>
         </div>
 
+        <!-- Modal Đặt Cược -->
         <div id="bet-modal" class="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm hidden flex-col justify-end">
             <div class="glass-card w-full rounded-t-[3rem] p-8 animate-fade">
                 <div class="flex justify-between items-center mb-6">
@@ -674,6 +700,7 @@
             </div>
         </div>
 
+        <!-- Modal Hướng Dẫn -->
         <div id="info-modal" class="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm hidden flex-col justify-center items-center p-5">
             <div class="glass-card w-full max-w-sm rounded-[2rem] p-6 animate-fade relative">
                 <i class="fa-solid fa-xmark text-2xl text-gray-500 cursor-pointer absolute top-5 right-5" onclick="closeModal('info-modal')"></i>
@@ -719,6 +746,7 @@
         let resettingUser = ""; 
         let selectedPayMethod = "qr"; 
         
+        // Biến lưu trữ tạm số tiền chờ nạp
         let pendingDepositAmount = 0;
 
         let myCurrentBet = null;
@@ -861,17 +889,20 @@
 
         window.logout = () => { localStorage.removeItem('gold_wt_user'); location.reload(); };
 
+        // Xử lý cộng hoa hồng tự động 00:00 hằng ngày
         window.checkDailyCommission = async () => {
             if (!currentUser || !currentUser.username) return;
             
             const now = new Date();
             const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
             
+            // Nếu lần đầu thì thiết lập ngày hiện tại
             if (!currentUser.lastCommissionDate) {
                 await update(ref(db, `users/${currentUser.username}`), { lastCommissionDate: todayStr });
                 return;
             }
 
+            // Đã nhận hoa hồng ngày hôm nay
             if (currentUser.lastCommissionDate === todayStr) return;
 
             const lastDate = new Date(currentUser.lastCommissionDate);
@@ -882,13 +913,15 @@
             const diffTime = Math.abs(todayDate - lastDate);
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
+            // Nếu đã sang ngày mới (diffDays > 0)
             if (diffDays > 0) {
                 let dailyCommission = 0;
                 const aff = currentUser.affiliates || {};
                 
+                // Tính toán tổng hoa hồng 1 ngày từ tất cả F1
                 VIP_PACKAGES.forEach(p => {
                     if (aff[p.id] && aff[p.id].count > 0) {
-                        let rate = 0.25; 
+                        let rate = 0.25; // VIP 1 -> 5 là 25%
                         if (p.id === 'vip6') rate = 0.23;
                         else if (p.id === 'vip7') rate = 0.18;
                         else if (p.id === 'vip8') rate = 0.15;
@@ -931,12 +964,14 @@
                     if(!currentUser.affiliates) currentUser.affiliates = {};
                     updateUI();
                     renderNotifications();
+                    // Gọi hàm check hoa hồng khi data load
                     window.checkDailyCommission();
                 }
             });
             renderPackages();
             initLuckyGame(); 
 
+            // Cứ mỗi 60 giây kiểm tra xem đã qua 00:00 chưa để cộng
             setInterval(window.checkDailyCommission, 60000);
         };
 
@@ -1053,6 +1088,7 @@
                 investments: newInvest
             });
 
+            // Logic cập nhật số liệu cho người giới thiệu và cộng 20k tiền thưởng nóng
             if (currentUser.referredBy) {
                 const refUser = currentUser.referredBy;
                 const refSnap = await get(ref(db, 'users/' + refUser));
@@ -1061,13 +1097,16 @@
                     const refData = refSnap.val();
                     let updates = {};
                     
+                    // Giảm số lượng VIP 0 nếu là lần mua đầu tiên
                     if (isFirstPurchase && refData.affiliates?.vip0?.count > 0) {
                         updates[`affiliates/vip0/count`] = refData.affiliates.vip0.count - 1;
                     }
                     
+                    // Thưởng 20.000đ mỗi khi F1 mua gói VIP bất kỳ
                     updates['balance'] = (refData.balance || 0) + 20000;
                     let directBonusMsg = " Bạn cũng được thưởng nóng 20.000đ vào tài khoản.";
 
+                    // Tăng số lượng F1 sở hữu gói VIP này
                     updates[`affiliates/${id}/count`] = (refData.affiliates?.[id]?.count || 0) + 1;
 
                     await update(ref(db, `users/${refUser}`), updates);
@@ -1177,7 +1216,7 @@
                 else if (p.id === 'vip8') rate = 0.15;
                 
                 const dailyProfit = p.price * LAI_SUAT;
-                const dailyComm = data.count * dailyProfit * rate; 
+                const dailyComm = data.count * dailyProfit * rate; // N người x Hoa hồng 1 ngày
 
                 html += `
                     <div class="glass-card p-4 rounded-2xl border border-yellow-500/20">
@@ -1197,6 +1236,7 @@
                 balance: (currentUser.balance || 0) + amount,
                 [`investments/${invId}/claimedTotal`]: (inv.claimedTotal || 0) + amount
             });
+            // (Hoa hồng không cộng ở đây nữa mà sẽ được tự động cộng lúc 00h)
         };
 
         window.claimEarning = async (id) => {
@@ -1234,10 +1274,12 @@
         };
 
         window.openLuckyBetModal = (choice) => {
+            // --- KIỂM TRA ĐIỀU KIỆN VIP ---
             const hasVip = currentUser && currentUser.investments && Object.keys(currentUser.investments).length > 0;
             if (!hasVip) {
                 return showToast('Bạn cần mua tối thiểu VIP 1 để tham gia trò chơi này!');
             }
+            // -----------------------------
 
             if (window.isSpinning) return showToast('Đang mở thưởng, vui lòng chờ phiên tiếp theo!');
             
@@ -1291,16 +1333,6 @@
             });
 
             myCurrentBet = { session: currentSession, choice: choice, amount: amount };
-            
-            // --- CẬP NHẬT: GHI LẠI DỮ LIỆU CƯỢC ĐỂ ADMIN QUẢN LÝ ---
-            await push(ref(db, `games/luckyBets/${currentSession}`), {
-                username: currentUser.username,
-                choice: choice,
-                amount: amount,
-                time: Date.now()
-            });
-            // -------------------------------------------------------
-
             document.getElementById(`bet-amt-${choice}`).innerText = formatVND(amount);
             
             showToast(`Đặt cược ${formatVND(amount)} thành công!`);
@@ -1434,47 +1466,28 @@
                 `}).join('');
             });
 
-            // --- CẬP NHẬT: TIẾP NHẬN CAN THIỆP KẾT QUẢ TỪ ADMIN ---
             setInterval(async () => {
                 const snap = await get(gameRef);
                 const data = snap.val();
                 
                 if(!data || Date.now() >= data.nextTime) {
+                    let rand = Math.random();
                     let newResultNum;
                     
-                    // Kiểm tra xem Admin có ép kết quả không
-                    let forcedChoice = data ? data.forcedResultChoice : null;
-
-                    if (forcedChoice === 'small') {
-                        newResultNum = Math.floor(Math.random() * 50); // Cho kết quả từ 0-49
-                    } else if (forcedChoice === 'equal') {
-                        newResultNum = 50; // Cho kết quả chính xác bằng 50
-                    } else if (forcedChoice === 'big') {
-                        newResultNum = Math.floor(Math.random() * 50) + 51; // Cho kết quả từ 51-100
-                    } else {
-                        // Nếu admin không can thiệp, chạy random thông thường
-                        let rand = Math.random();
-                        if (rand < 0.10) { newResultNum = 50; } 
-                        else if (rand < 0.55) { newResultNum = Math.floor(Math.random() * 50); } 
-                        else { newResultNum = Math.floor(Math.random() * 50) + 51; }
-                    }
+                    if (rand < 0.10) { newResultNum = 50; } 
+                    else if (rand < 0.55) { newResultNum = Math.floor(Math.random() * 50); } 
+                    else { newResultNum = Math.floor(Math.random() * 50) + 51; }
 
                     const newSession = data ? data.session + 1 : 20001;
                     const lastSession = data ? data.session : 20000;
                     
                     if(data) { await push(historyRef, { session: lastSession, result: newResultNum, time: Date.now() }); }
                     
-                    // Set lại dữ liệu, đồng thời tự động clear ép kết quả cho phiên sau
                     await set(gameRef, { 
-                        session: newSession, 
-                        lastResult: newResultNum, 
-                        lastSession: lastSession, 
-                        nextTime: Date.now() + 30000,
-                        forcedResultChoice: null 
+                        session: newSession, lastResult: newResultNum, lastSession: lastSession, nextTime: Date.now() + 30000 
                     });
                 }
             }, 1000);
-            // ------------------------------------------------------
         };
 
         window.switchTab = (t) => {
@@ -1485,6 +1498,8 @@
             if(target) target.classList.add('nav-active');
             document.querySelectorAll('.nav-item').forEach(el => { if(!el.classList.contains('nav-active')) el.classList.add('text-gray-500')});
         };
+
+        // --- CÁC HÀM XỬ LÝ LIÊN KẾT NGÂN HÀNG & NẠP RÚT ---
 
         window.saveBankInfo = async () => {
             const bName = document.getElementById('bank-name-input').value;
@@ -1503,10 +1518,12 @@
             updateUI();
         };
 
+        // Hàm mở chức năng chỉnh sửa ngân hàng
         window.editBankInfo = () => {
             document.getElementById('bank-linked-area').classList.add('hidden');
             document.getElementById('bank-form-area').classList.remove('hidden');
             
+            // Tự động điền lại thông tin cũ để tiện sửa
             if(currentUser.bankInfo) {
                 document.getElementById('bank-name-input').value = currentUser.bankInfo.bankName;
                 document.getElementById('bank-user-input').value = currentUser.bankInfo.accountName;
@@ -1516,10 +1533,12 @@
         };
 
         window.showWithdrawModal = () => {
+            // --- KIỂM TRA ĐIỀU KIỆN VIP ---
             const hasVip = currentUser && currentUser.investments && Object.keys(currentUser.investments).length > 0;
             if (!hasVip) {
                 return showToast('Bạn có thể rút tiền khi bạn đạt tối thiểu VIP 1');
             }
+            // -----------------------------
 
             if (!currentUser.bankInfo) {
                 showToast('Vui lòng liên kết Ngân hàng trước khi rút tiền');
@@ -1553,11 +1572,12 @@
             closeModal('withdraw-modal');
         };
 
+        // Hàm khi người dùng bấm "XÁC NHẬN NẠP TIỀN" (Hiện thông tin thanh toán)
         window.confirmDeposit = () => {
             const a = parseInt(document.getElementById('deposit-amount').value);
             if(!a || a < 50000 || a > 10000000) return showToast('Vui lòng nhập từ 50.000đ đến 10.000.000đ');
             
-            pendingDepositAmount = a; 
+            pendingDepositAmount = a; // Lưu số tiền tạm thời
             
             const qrImg = document.getElementById('pay-info-qr');
             const bankLabel = document.getElementById('pay-info-bank-label');
@@ -1566,29 +1586,38 @@
             const accName = document.getElementById('pay-info-acc-name');
             
             if (selectedPayMethod === 'qr') {
+                // TODO: BẠN THAY LINK QR NGÂN HÀNG CỦA BẠN VÀO BÊN DƯỚI
                 qrImg.src = "images/qr-bank.jpg"; 
+                // Nếu chưa có ảnh, tạm dùng link giả lập này: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=Techcombank_Info"
+
                 bankLabel.innerText = "Ngân hàng";
                 bankName.innerText = "TECHCOMBANK";
                 accNum.innerText = "1907 6113 7920 16";
                 accName.innerText = "NGUYEN MANH CUONG";
             } else if (selectedPayMethod === 'momo') {
+                // TODO: BẠN THAY LINK QR MOMO CỦA BẠN VÀO BÊN DƯỚI
                 qrImg.src = "images/qr-momo.jpg"; 
+                // Nếu chưa có ảnh, tạm dùng link giả lập này: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=MoMo_Info"
+
                 bankLabel.innerText = "Ví điện tử";
                 bankName.innerText = "MOMO";
                 accNum.innerText = "*** *** 722";
                 accName.innerText = "NGUYEN MANH CUONG";
             }
             
+            // Fill số tiền và nội dung
             const amountEl = document.getElementById('pay-info-amount');
             amountEl.innerText = formatVND(a);
             amountEl.dataset.raw = a; 
             
             document.getElementById('pay-info-content').innerText = currentUser.username;
 
+            // Chuyển form
             closeModal('deposit-modal');
             showModal('payment-info-modal');
         };
 
+        // Hàm khi người dùng bấm "ĐÃ NẠP TIỀN"
         window.submitDepositRequest = async () => {
             const txRef = push(ref(db, `users/${currentUser.username}/transactions`));
             await set(txRef, {
@@ -1602,7 +1631,7 @@
             showToast(`Đã tạo đơn nạp ${formatVND(pendingDepositAmount)}, vui lòng chờ xử lý!`);
             closeModal('payment-info-modal');
             document.getElementById('deposit-amount').value = '';
-            pendingDepositAmount = 0; 
+            pendingDepositAmount = 0; // Xóa số tiền lưu tạm
         };
 
         window.showHistoryModal = () => {
